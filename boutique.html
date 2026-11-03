@@ -943,7 +943,7 @@ function showOrder(id,keep){
   var payTxt=o.pay==='acompte'?(o.acompte>=total(o)?'Tout payé':'Acompte de '+F(o.acompte)+' reçu')+(o.acompteVia?' ('+PM[o.acompteVia]+')':''):o.pay==='livraison'?(PM[o.payChoix]?PM[o.payChoix]+' · à vérifier':(o.mode==='retrait'?'Sur place':'À la livraison')):PAY[o.pay];
   var payChk=waitPay(o)?'<div class="paychk"><b>Le client paie par '+PM[o.payChoix]+' : '+F(total(o))+'</b><p class="hint">Regardez vos notifications '+PM[o.payChoix]+'. S\'il a payé, touchez le bouton vert : '+(o.mode==='retrait'?'il n\'aura plus rien à payer sur place.':'le livreur n\'aura rien à encaisser.')+'</p><div class="btn-row"><button class="btn sm ok" data-act="o-paid" data-id="'+o.id+'">Payé '+PMS[o.payChoix]+' ✓</button><button class="btn sm ghost" data-act="o-paylater" data-id="'+o.id+'">Il paiera '+(o.mode==='retrait'?'sur place':'à la livraison')+'</button></div></div>':'';
   var paid=!!PMS[o.pay];
-  var riderSel=o.mode==='retrait'?'':['nouvelle','prete','en_route'].indexOf(o.statut)>=0?'<label class="fld"><span>Livreur</span><select data-ch="o-rider" data-id="'+o.id+'"><option value="">— Choisir un livreur —</option>'+S.livreurs.map(function(l){return '<option value="'+l.id+'"'+(l.id===o.livreurId?' selected':'')+'>'+esc(l.nom)+' · '+esc(l.zone)+'</option>';}).join('')+'</select></label>':(r?'<div class="kv"><span>Livreur</span><b>'+esc(r.nom)+'</b></div>':'');
+  var riderSel=o.mode==='retrait'||o.tl?'':['nouvelle','prete','en_route'].indexOf(o.statut)>=0?'<label class="fld"><span>Livreur</span><select data-ch="o-rider" data-id="'+o.id+'"><option value="">— Choisir un livreur —</option>'+S.livreurs.map(function(l){return '<option value="'+l.id+'"'+(l.id===o.livreurId?' selected':'')+'>'+esc(l.nom)+' · '+esc(l.zone)+'</option>';}).join('')+'</select></label>':(r?'<div class="kv"><span>Livreur</span><b>'+esc(r.nom)+'</b></div>':'');
   var msgs=o.mode==='retrait'?[['confirm','Confirmation'],['suivi','Lien de suivi'],['pret','Prête à récupérer'],['merci','Merci + avis']]:[['confirm','Confirmation'],['suivi','Lien de suivi'],['route','Colis en route'],['merci','Merci + avis']].concat(r&&r.acces?[]:[['livreur','Fiche pour le livreur']]);
   var msgHint=o.mode!=='retrait'&&r&&r.acces?'<p class="hint">'+esc(prenom(r))+' a son espace livreur : il voit la commande là-bas. Inutile de lui envoyer les données du client sur WhatsApp, où elles resteraient.</p>':'';
   var hasAvis=(S.avis||[]).some(function(x){return x.orderId===o.id;});
@@ -965,7 +965,7 @@ function showOrder(id,keep){
       aEncaisser(o)<=0?'<div class="kv"><span>'+(o.mode==='retrait'?'À payer sur place':'Le livreur encaisse')+'</span><b>Rien, tout est payé</b></div>':
       '<div class="kv hl"><span>'+(o.mode==='retrait'?'À payer sur place':'Le livreur encaisse'+(paid?' (livraison)':''))+'</span><b>'+F(aEncaisser(o))+'</b></div>')+
     '<div class="kv gain"><span>Votre bénéfice</span><b>'+F(benef(o))+'</b></div></div></div>'+
-  '<div class="blk">'+payChk+riderSel+(o.transfert?'<p class="hint"><b>'+esc(prenom(rider(o.transfert.de)))+'</b> passe ce colis à <b>'+esc(prenom(rider(o.transfert.vers)))+'</b> : en attente de sa confirmation.</p>':'')+actionsHTML(o)+'</div>'+
+  '<div class="blk">'+payChk+riderSel+tlBlock(o)+(o.transfert?'<p class="hint"><b>'+esc(prenom(rider(o.transfert.de)))+'</b> passe ce colis à <b>'+esc(prenom(rider(o.transfert.vers)))+'</b> : en attente de sa confirmation.</p>':'')+(o.tl&&(o.statut==='prete'||o.statut==='en_route')?tlActions(o):actionsHTML(o))+'</div>'+
   (o.trace&&o.trace.length?'<div class="blk"><h3>Historique du colis</h3><ul class="trace">'+o.trace.map(function(x){return '<li><small>'+when(x.t)+'</small><span>'+esc(x.txt)+'</span></li>';}).join('')+'</ul></div>':'')+
   '<div class="blk"><h3>Messages WhatsApp prêts</h3><div class="chips">'+msgs.map(function(m){return '<button class="chip" data-act="o-msg" data-id="'+o.id+'" data-k="'+m[0]+'" aria-pressed="false">'+m[1]+'</button>';}).join('')+'</div>'+msgHint+'<div id="msgBox" class="blk"></div></div>'+
   '<div class="blk"><h3>Pages du client</h3><div class="btn-row"><button class="btn sm ghost" data-act="o-suivi" data-id="'+o.id+'">Voir son suivi</button>'+(o.statut==='livree'?'<button class="btn sm ghost" data-act="o-avis" data-id="'+o.id+'">'+(hasAvis?'Avis reçu':'Sa page d\'avis')+'</button>':'')+'</div></div>'+
@@ -1105,7 +1105,7 @@ function riderSheet(keep){var l=rdraft.id?rider(rdraft.id):null;
   '<p class="hint">Seulement pour un livreur de confiance. Il voit ses colis (adresse, numéro du client, montant à encaisser) et marque lui-même « récupéré », « livré » ou « retour ». Il ne voit jamais vos prix d\'achat ni vos bénéfices.</p>'+
   (rdraft.acces?'<div class="kv"><span>Son code</span><b class="sel">'+esc(rdraft.code)+'</b></div><button class="linkbtn" data-act="r-newcode">Changer le code</button>':'')+'</div>'+
   '<button class="btn block" data-act="r-save">Enregistrer</button>'+(l?'<button class="linkbtn danger" data-act="r-del">Retirer ce livreur</button>':''),keep);}
-function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',waveLink:sp.waveLink||'',omLink:sp.omLink||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),zone:sp.zone||'',code:ACC&&ACC.code||''};
+function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',waveLink:sp.waveLink||'',omLink:sp.omLink||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),zone:sp.zone||'',code:ACC&&ACC.code||'',livCode:sp.livCode||'',livZone:sp.livZone||''};
   openSheet('<div class="sh-head"><div><p class="eyebrow">Réglages</p><h2>Ma boutique</h2></div>'+closeBtn+'</div>'+
   '<label class="fld"><span>Nom de la boutique</span><input id="s_nom" data-s="nom" value="'+esc(sdraft.nom)+'"></label>'+
   '<div class="card blk"><b>Photo de profil et couverture <em>(facultatif)</em></b><p class="hint">Elles s\'affichent en haut de votre boutique en ligne, comme sur TikTok. Sans photo, la page reste simple.</p>'+
@@ -1125,6 +1125,7 @@ function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,te
   '<label class="fld"><span>Adresse et horaires du retrait</span><input id="s_adr" data-s="adresse" value="'+esc(sdraft.adresse)+'" placeholder="Ex. : Liberté 6, à côté de la pharmacie, 10h–20h"></label></div>'+
   '<label class="fld"><span>Zone de livraison</span><input id="s_zone" data-s="zone" maxlength="60" value="'+esc(sdraft.zone)+'" placeholder="Ex. : Touba et environs, Louga ville, tout le Sénégal"><small class="hint">Vos clients la voient sur votre boutique en ligne. Vide = « Livraison à domicile ».</small></label>'+
   '<label class="fld"><span>Prix de la livraison habituel</span><input id="s_frais" data-s="frais" inputmode="numeric" value="'+esc(sdraft.frais)+'"><small class="hint">Utilisé pour les commandes de la boutique en ligne et du live. 0 = livraison gratuite.</small></label>'+
+  tlCard()+
   '<button class="btn block" data-act="s-save">Enregistrer</button>'+
   (MODE==='owner'?ownerCards():'<div class="card blk"><b>Démo</b><p class="hint">Tout ce que vous changez reste seulement sur ce téléphone. Vous pouvez revenir aux exemples du début.</p><button class="btn ghost" data-act="s-reset">Recommencer la démo</button>'+(onSite()?'<button class="btn" data-act="go-welcome">Créer ma vraie boutique</button>':'')+'</div>'),keepD);}
 function openClients(){
@@ -1926,6 +1927,66 @@ function ownerCards(){return '<div class="card blk"><b>Adresse de votre boutique
   '<a class="btn sm ghost" href="'+wa(SUPPORT,'Bonjour Seck Apps, je vous écris pour mon abonnement Teranga Shop. Mon numéro : '+(ACC&&ACC.phone||''))+'" target="_blank" rel="noopener">Écrire à Seck Apps</a></div>'+
   '<button class="linkbtn danger" data-act="s-logout">Se déconnecter</button>';}
 
+
+/* ---------- Teranga Livraison : envoyer la commande à une société de livraison à moto ---------- */
+var TL_SITE='https://seckappssn-maker.github.io/teranga-livraison/', TLS={};
+var TLST={nouvelle:['En attente d\'un livreur','info'],prise:['Le livreur va chercher le colis','sun'],recuperee:['Colis récupéré, en route','warn'],livree:['Livré ✅','ok'],annulee:['Annulée par la société','bad']};
+function tlCodeOf(v){v=String(v||'').trim();var m=v.match(/[?&]c=([^&#\s]+)/);if(m)v=decodeURIComponent(m[1]);return v.toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,40);}
+function tlCard(){var sp=S.shop,zs=sp.livZones||[];
+  return '<div class="card blk"><b>🛵 Société de livraison <em>(facultatif)</em></b><p class="hint">Vous travaillez avec une société de livraison qui utilise Teranga Livraison ? Collez son lien ou son code. Sur chaque commande vous aurez le bouton « Envoyer à la société » : elle reçoit la course tout de suite, son livreur encaisse pour vous.</p>'+
+  '<label class="fld"><span>Lien ou code de la société</span><input data-s="livCode" value="'+esc(sdraft.livCode||'')+'" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="Ex. : seck-livraison"></label>'+
+  (sp.livCode&&sp.livNom?'<p class="hint">Reliée à <b>'+esc(sp.livNom)+'</b>'+(sp.livTel?' · '+fmtTel(sp.livTel):'')+'.</p>':'')+
+  (zs.length>1?'<label class="fld"><span>Zone de départ des colis</span><select data-s="livZone">'+zs.map(function(z){return '<option'+(z===(sdraft.livZone||zs[0])?' selected':'')+'>'+esc(z)+'</option>';}).join('')+'</select></label>':'')+
+  '<small class="hint">Laissez vide si vous avez seulement vos propres livreurs.</small></div>';}
+function tlSaveCode(v,z){var c=tlCodeOf(v),sp=S.shop;
+  if(!c){sp.livCode='';sp.livNom='';sp.livTel='';sp.livZones=[];sp.livZone='';return;}
+  if(c!==sp.livCode){sp.livNom='';sp.livTel='';sp.livZones=[];}
+  sp.livCode=c;sp.livZone=String(z||'').slice(0,40);
+  if(MODE!=='owner'||!SB)return;
+  rpc('liv_public',{p_code:c}).then(function(d){
+    if(!d||!d.ok){toast('Société de livraison introuvable : vérifiez le lien');sp.livNom='';save();return;}
+    sp.livNom=d.nom||c;sp.livTel=d.tel||'';sp.livZones=d.zones||[];if(sp.livZone&&sp.livZones.indexOf(sp.livZone)<0)sp.livZone='';
+    save();toast('Reliée à '+sp.livNom+' 🛵');
+  }).catch(function(e){toast(errMsg(e));});}
+function tlNom(){return S.shop.livNom||S.shop.livCode||'la société';}
+function tlMoney(o){var col=aEncaisser(o),fee=Math.min(o.frais||0,col);return {col:col,fee:fee,march:col-fee};}
+function tlBlock(o){if(o.mode==='retrait')return '';
+  if(o.tl){var t=o.tl,s=TLS[o.id],st=s&&TLST[s.statut];
+    return '<div class="card blk"><b>🛵 Envoyée à '+esc(t.nom||t.code)+' · course N° '+esc(t.no)+'</b>'+
+      (s?'<div class="kv"><span>Où en est la course</span><b><span class="pill st-'+(st?st[1]:'info')+'">'+(st?st[0]:esc(s.statut))+'</span></b></div>'+(s.livreur?'<div class="kv"><span>Livreur</span><b>'+esc(s.livreur.nom)+' · <span class="sel">'+fmtTel(s.livreur.tel)+'</span></b></div>':''):'<p class="hint">Touchez « Voir où en est la course » pour savoir quel livreur l\'a prise.</p>')+
+      (t.cl?'<div class="kv"><span>Code de livraison du client</span><b class="sel">'+esc(t.cl)+'</b></div><p class="hint">Le livreur doit demander ce code au client. Envoyez-lui son lien : il voit le code et peut envoyer sa position.</p>':'')+
+      '<div class="btn-row"><button class="btn sm" data-act="tl-suivi" data-id="'+o.id+'">Voir où en est la course</button>'+(o.client.tel?'<button class="btn sm ghost" data-act="tl-client" data-id="'+o.id+'">Envoyer son lien au client</button>':'')+'</div>'+
+      (S.shop.livTel?'<a class="linkbtn" href="'+wa(S.shop.livTel,'Bonjour, c\'est '+S.shop.nom+'. Pour la course N° '+t.no+' (commande #'+o.num+')…')+'" target="_blank" rel="noopener">Écrire à '+esc(t.nom||'la société')+'</a>':'')+
+      (s&&s.statut==='annulee'?'<button class="btn sm ghost" data-act="tl-reset" data-id="'+o.id+'">Ne plus suivre cet envoi</button>':'')+'</div>';}
+  if(!S.shop.livCode||(o.statut!=='nouvelle'&&o.statut!=='prete')||o.livreurId)return '';
+  var m=tlMoney(o);
+  return '<div class="card blk"><button class="btn block" data-act="tl-send" data-id="'+o.id+'">🛵 Envoyer à '+esc(tlNom())+'</button><p class="hint">'+
+    (m.col>0?'Le livreur encaisse <b>'+F(m.col)+'</b> chez le client'+(m.march>0?' : <b>'+F(m.march)+'</b> pour vous'+(m.fee?' et '+F(m.fee)+' de livraison':''):' (la livraison)')+'.':'Rien à encaisser chez le client.')+' Ou choisissez un de vos livreurs juste au-dessus.</p></div>';}
+function tlActions(o){var s=TLS[o.id];
+  return (s&&s.statut==='livree'?'<p class="hint"><b>'+esc(o.tl.nom||'La société')+' dit que le colis est livré.</b></p>':'')+
+    '<div class="btn-row"><button class="btn ok" data-act="o-done" data-id="'+o.id+'">Livrée</button><button class="btn ghost" data-act="o-return" data-id="'+o.id+'">Retour</button></div><p class="hint">Touchez « Livrée » quand la société confirme. Ensuite elle vous rend l\'argent encaissé.</p>';}
+function tlSend(id,b){var o=byId(id);if(!o||o.tl)return;
+  if(MODE!=='owner'||!SB){toast('Dans la démo, rien n\'est envoyé à la société');return;}
+  if(normTel(S.shop.tel).length!==9){toast('Mettez d\'abord le numéro WhatsApp de la boutique dans Réglages');return;}
+  var m=tlMoney(o),g=o.client&&o.client.geo&&!o.client.geo.demo?{lat:o.client.geo.lat,lng:o.client.geo.lng}:undefined;
+  var p={src:'shop',type:'colis',zone:S.shop.livZone||'',cli:{nom:S.shop.nom,tel:normTel(S.shop.tel)},de:S.shop.adresse||S.shop.nom,a:o.client.quartier||'',
+    dest:{nom:o.client.nom||'',tel:normTel(o.client.tel)},note:('Commande #'+o.num+' · '+itemsTxt(o)+(o.note?' · '+o.note:'')).slice(0,300),
+    prix:m.fee,paie:m.fee>0?'dest':'exp',mode:'cash',march:m.march,apos:g,vendeur:{nom:S.shop.nom,tel:normTel(S.shop.tel),ref:'#'+o.num}};
+  b.disabled=true;b.textContent='Envoi…';
+  rpc('liv_demande',{p_code:S.shop.livCode,p:p}).then(function(r){
+    o.tl={code:S.shop.livCode,nom:tlNom(),id:r.id,no:r.no,tk:r.tk,dtk:r.dtk,cl:r.cl||'',t:Date.now()};
+    if(o.statut==='nouvelle')setSt(o,'prete');addTrace(o,'Envoyée à '+tlNom()+' (course N° '+r.no+')');save();render();showOrder(id,true);toast('Envoyée à '+tlNom()+' 🛵');
+  }).catch(function(e){b.disabled=false;b.textContent='🛵 Envoyer à '+tlNom();toast(errMsg(e));});}
+function tlSuivi(id,b){var o=byId(id);if(!o||!o.tl)return;if(b){b.disabled=true;b.textContent='…';}
+  rpc('liv_suivi',{p_code:o.tl.code,p_id:o.tl.id,p_tk:o.tl.tk}).then(function(s){
+    if(!s||!s.ok){toast('Course introuvable chez la société');if(b){b.disabled=false;b.textContent='Voir où en est la course';}return;}
+    TLS[id]=s;if(s.statut==='recuperee'&&o.statut==='prete'){setSt(o,'en_route');addTrace(o,'Colis récupéré par '+(s.livreur?s.livreur.nom:'le livreur')+' ('+(o.tl.nom||'société')+')');save();render();}
+    showOrder(id,true);
+  }).catch(function(e){if(b){b.disabled=false;b.textContent='Voir où en est la course';}toast(errMsg(e));});}
+function tlClient(id){var o=byId(id);if(!o||!o.tl)return;var t=o.tl,link=TL_SITE+'commande.html?c='+encodeURIComponent(t.code)+'&d='+encodeURIComponent(t.id)+'&k='+encodeURIComponent(t.dtk);
+  var msg='Bonjour'+(o.client.nom?' '+o.client.nom:'')+', votre commande #'+o.num+' de '+S.shop.nom+' arrive avec '+(t.nom||'notre livreur')+' 🛵\n'+(t.cl?'Votre code de livraison : '+t.cl+' (donnez-le au livreur seulement quand vous avez le colis).\n':'')+'Envoyez votre position ici pour qu\'il vous trouve vite :\n'+link;
+  window.open(wa(o.client.tel,msg),'_blank','noopener');}
+
 /* ---------- Actions ---------- */
 document.addEventListener('click',function(e){
   if(e.target.id==='sheetWrap'){closeSheet();return;}
@@ -1944,6 +2005,10 @@ document.addEventListener('click',function(e){
     case 'copy':if(String(b.dataset.text).indexOf(SITE)>=0)lsSet('teranga-shop-shared','1');copy(b.dataset.text);break;
     case 'filt':filt=b.dataset.f;document.querySelectorAll('[data-act="filt"]').forEach(function(c){c.setAttribute('aria-pressed',String(c===b));});renderOrderList();break;
 
+    case 'tl-send':tlSend(id,b);break;
+    case 'tl-suivi':tlSuivi(id,b);break;
+    case 'tl-client':tlClient(id);break;
+    case 'tl-reset':if(!armed(b,'Oui, ne plus suivre cet envoi'))break;o=byId(id);addTrace(o,'Envoi à la société de livraison retiré par la boutique');o.tl=null;delete TLS[id];save();render();showOrder(id,true);break;
     case 'o-confirm':o=byId(id);setSt(o,'prete');save();render();showOrder(id,true);toast('Commande confirmée');break;
     case 'o-send':o=byId(id);setSt(o,'en_route');addTrace(o,'Remis à '+prenom(rider(o.livreurId))+' par la boutique');save();render();showOrder(id,true);toast('Colis remis au livreur');break;
     case 'o-done':o=byId(id);setSt(o,'livree');addTrace(o,'Marqué livré par la boutique');o.verse=aRemettre(o)===0;save();render();showOrder(id,true);toast('Livrée');break;
@@ -2115,6 +2180,7 @@ document.addEventListener('click',function(e){
       S.shop.nom=(sdraft.nom||'').trim()||'Ma boutique';S.shop.tel=normTel(sdraft.tel);
       S.shop.wave=normTel(sdraft.wave);S.shop.om=normTel(sdraft.om);S.shop.mixx=normTel(sdraft.mixx);S.shop.waveLink=String(sdraft.waveLink||'').trim().slice(0,400);S.shop.omLink=String(sdraft.omLink||'').trim().slice(0,400);
       S.shop.retrait=sdraft.retrait;S.shop.adresse=(sdraft.adresse||'').trim();S.shop.frais=num(sdraft.frais);S.shop.zone=(sdraft.zone||'').trim().slice(0,60);
+      tlSaveCode(sdraft.livCode,sdraft.livZone);
       save();closeSheet();render();toast(methods().length?'Enregistré · paiement : '+methodsTxt():'Enregistré · aucun numéro de paiement');break;}
     case 's-reset':if(!armed(b,'Oui, revenir aux exemples'))break;S=seed();q='';filt='all';save();closeSheet();go('home');toast('Démo recommencée');break;
   }
