@@ -565,7 +565,7 @@ var SRCK=['tiktok','insta','fb','wa','live','vitrine'];
 var PAY={livraison:'À la livraison',wave:'Payé par Wave',om:'Payé par Orange Money',mixx:'Payé par Mixx by Yas',acompte:'Acompte'};
 var PM={wave:'Wave',om:'Orange Money',mixx:'Mixx by Yas'}, PMS={wave:'Wave',om:'OM',mixx:'Mixx'};
 var QUARTIERS=['Médina','Plateau','Fass','Colobane','HLM','Grand Dakar','Sacré-Cœur','Mermoz','Point E','Fann','Liberté 6','Grand Yoff','Parcelles Assainies','Patte d\'Oie','Ouakam','Ngor','Yoff','Almadies','Pikine','Guédiawaye','Thiaroye','Keur Massar','Rufisque','Diamniadio','Mbao'];
-var AVALL=false, S, tab='home', filt='all', q='', draft=null, pdraft=null, rdraft=null, sdraft=null, cart=null, avf=null, liv=null, toastT;
+var AVALL=false, AVALLS=false, S, tab='home', filt='all', q='', draft=null, pdraft=null, rdraft=null, sdraft=null, cart=null, avf=null, liv=null, toastT;
 var DELAIS=[15,30,60], ACOMPTES=[1000,2000,5000,-1];
 
 /* ---------- Données d'exemple ---------- */
@@ -859,7 +859,7 @@ function productsHTML(){
   }).join('')+'</div></section>'+
   '<section class="blk"><div class="row-head"><h3>Avis clients</h3>'+(av.length?'<span class="avg">'+stars(avgNote(av))+' <b>'+avgNote(av).toFixed(1).replace('.',',')+'</b> · '+plural(av.length,'avis','avis')+'</span>':'')+'</div>'+
   '<p class="hint">Quand la commande est livrée, le client peut donner son avis depuis sa page de suivi ou avec le lien du message « Merci + avis ». Seuls les clients qui ont reçu leur commande peuvent noter. Les avis s\'affichent sur votre boutique en ligne.</p>'+
-  (all.length?all.slice().sort(function(a,b){return b.date-a.date;}).map(function(a){return avisCard(a,true);}).join(''):'<p class="empty">Pas encore d\'avis.</p>')+'</section>';
+  (all.length?all.slice().sort(function(a,b){return b.date-a.date;}).slice(0,AVALLS?999:3).map(function(a){return avisCard(a,true);}).join('')+(all.length>3?'<button class="linkbtn" data-act="avis-all">'+(AVALLS?'Voir seulement les 3 derniers ↑':'Voir les '+all.length+' avis →')+'</button>':''):'<p class="empty">Pas encore d\'avis.</p>')+'</section>';
 }
 
 function ridersHTML(){
@@ -1823,6 +1823,7 @@ function handleMode(a,b,id){
     case 'zoom':openZoom(id,+b.dataset.i||0);return true;
     case 'zoom-avis':openZoomAvis(id);return true;
     case 'c-avall':AVALL=true;openClient(true);return true;
+    case 'avis-all':AVALLS=!AVALLS;render();return true;
     case 'zoom-close':closeZoom();return true;
     case 'ph-del':if(pdraft){pdraft.photos.splice(+b.dataset.i,1);pdraft.photo=pdraft.photos[0]||'';renderProduct(true);}return true;
     case 'ph-main':if(pdraft){var ph=pdraft.photos.splice(+b.dataset.i,1)[0];pdraft.photos.unshift(ph);pdraft.photo=ph;renderProduct(true);}return true;
