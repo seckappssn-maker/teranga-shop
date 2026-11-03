@@ -560,7 +560,12 @@ var SRC={tiktok:'TikTok',insta:'Instagram',fb:'Facebook',wa:'WhatsApp',live:'Liv
 var SRCK=['tiktok','insta','fb','wa','live','vitrine'];
 var PAY={livraison:'À la livraison',wave:'Payé par Wave',om:'Payé par Orange Money',mixx:'Payé par Mixx by Yas',acompte:'Acompte'};
 var PM={wave:'Wave',om:'Orange Money',mixx:'Mixx by Yas'}, PMS={wave:'Wave',om:'OM',mixx:'Mixx'};
-var QUARTIERS=['Médina','Plateau','Fass','Colobane','HLM','Grand Dakar','Sacré-Cœur','Mermoz','Point E','Fann','Liberté 6','Grand Yoff','Parcelles Assainies','Patte d\'Oie','Ouakam','Ngor','Yoff','Almadies','Pikine','Guédiawaye','Thiaroye','Keur Massar','Rufisque','Diamniadio','Mbao'];
+var QUARTIERS_DKR=['Médina','Plateau','Fass','Colobane','HLM','Grand Dakar','Sacré-Cœur','Mermoz','Point E','Fann','Liberté 6','Grand Yoff','Parcelles Assainies','Patte d\'Oie','Ouakam','Ngor','Yoff','Almadies','Pikine','Guédiawaye','Thiaroye','Keur Massar','Rufisque','Diamniadio','Mbao'];
+/* Quartiers proposés : ceux des clients de CETTE boutique, + ceux de Dakar seulement si la zone de livraison parle de Dakar */
+function quartiers(){var z=plain(S&&S.shop&&S.shop.zone||''),seen={},out=[];function add(q){q=String(q||'').trim();var k=plain(q);if(q&&!seen[k]){seen[k]=1;out.push(q);}}
+  if(MODE!=='public')(S.commandes||[]).forEach(function(o){add(o.client&&o.client.quartier);});
+  if(z.indexOf('dakar')>=0)QUARTIERS_DKR.forEach(add);
+  return out;}
 var AVALL=false, AVALLS=false, S, tab='home', filt='all', q='', draft=null, pdraft=null, rdraft=null, sdraft=null, cart=null, avf=null, liv=null, toastT;
 var DELAIS=[15,30,60], ACOMPTES=[1000,2000,5000,-1];
 
@@ -611,7 +616,7 @@ function seed(){
       A('a2','o1043','Coumba Guèye',5,'Les abayas sont exactement comme dans la vidéo. Je recommande !',28),
       A('a3','o1041','Mariama Sow',4,'Baskets jolies et confortables. Elles taillent un peu petit.',70),
       A('a4','o1039','Fatou Diop',5,'Troisième commande, toujours sérieux et rapide. Merci !',118)
-    ],shop:{nom:'Awa Collection',tel:'770000000',wave:'770000000',om:'780000000',mixx:'',retrait:true,adresse:'Liberté 6, à côté de la pharmacie'},produits:produits,
+    ],shop:{nom:'Awa Collection',tel:'770000000',wave:'770000000',om:'780000000',mixx:'',retrait:true,adresse:'Liberté 6, à côté de la pharmacie',zone:'Dakar et banlieue'},produits:produits,
     livreurs:[{id:'l1',nom:'Modou Faye',tel:'770001122',zone:'Médina, Plateau, Liberté',acces:true,code:'4821'},{id:'l2',nom:'Ibrahima Ba',tel:'760003344',zone:'Parcelles, Guédiawaye',acces:true,code:'7350'},{id:'l3',nom:'Pape Ndiaye',tel:'780005566',zone:'Pikine, Keur Massar',acces:false,code:''}],
     commandes:commandes,
     live:{actif:true,debut:now-25*60e3,items:['p6','p1','p3','p4','p7','p2'],current:'p6',acompte:2000,delai:30,resa:[
@@ -977,7 +982,7 @@ function renderDraft(keep){
   '<label class="fld"><span>Coller le message du client <em>(facultatif)</em></span><textarea id="d_msg" data-d="msg" rows="2" placeholder="Ex. : Bonjour je veux l\'abaya noire taille M, je suis à Sacré-Cœur, 77 000 12 34"></textarea><small class="hint good" id="d_msgHint"></small></label>'+
   '<div class="grid2"><label class="fld"><span>Nom du client</span><input id="d_nom" data-d="nom" value="'+esc(d.client.nom)+'" autocomplete="off"></label><label class="fld"><span>Téléphone</span><input id="d_tel" data-d="tel" inputmode="tel" value="'+esc(d.client.tel)+'" autocomplete="off"></label></div>'+
   '<small class="hint good" id="d_known"></small>'+
-  '<label class="fld"><span>Quartier ou adresse</span><input id="d_q" data-d="quartier" list="quartiers" value="'+esc(d.client.quartier)+'" autocomplete="off"></label><datalist id="quartiers">'+QUARTIERS.map(function(x){return '<option value="'+esc(x)+'">';}).join('')+'</datalist>'+
+  '<label class="fld"><span>Quartier ou adresse</span><input id="d_q" data-d="quartier" list="quartiers" value="'+esc(d.client.quartier)+'" autocomplete="off"></label><datalist id="quartiers">'+quartiers().map(function(x){return '<option value="'+esc(x)+'">';}).join('')+'</datalist>'+
   (d.mode==='retrait'?'':'<label class="fld"><span>Localisation <em>(facultatif)</em></span><input id="d_maps" data-d="maps" value="'+esc(d.client.maps||'')+'" placeholder="Collez la position WhatsApp ou un lien Google Maps" autocomplete="off"><small class="hint">Visible seulement par vous et les livreurs avec espace livreur.</small></label>')+
   '<div class="fld"><span>Le client vient de</span><div class="chips">'+['tiktok','insta','fb','wa','live'].map(function(k){return '<button class="chip" data-act="d-src" data-v="'+k+'" aria-pressed="'+(d.src===k)+'"><i class="sw" style="background:var(--p-'+k+')"></i>'+SRC[k]+'</button>';}).join('')+'</div></div>'+
   '<div class="fld"><span>Articles</span><div class="lines">'+lines+'</div>'+
@@ -1019,7 +1024,7 @@ function plain(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').t
 function scanMsg(text){
   var found=[], m=String(text).match(/(?:\+?221[\s.-]?)?(7[05678])[\s.-]?(\d{3})[\s.-]?(\d{2})[\s.-]?(\d{2})/);
   if(m){var d=m[1]+m[2]+m[3]+m[4];draft.client.tel=d;$('#d_tel').value=fmtTel(d);found.push('numéro '+fmtTel(d));knownClient();}
-  var pt=plain(text), qz=QUARTIERS.filter(function(x){return pt.indexOf(plain(x))>=0;})[0];
+  var pt=plain(text), qz=quartiers().filter(function(x){return x.length>2&&pt.indexOf(plain(x))>=0;})[0];
   if(qz&&!draft.client.quartier){draft.client.quartier=qz;$('#d_q').value=qz;found.push('quartier '+qz);}
   var mp=String(text).match(/https?:\/\/(?:maps\.app\.goo\.gl|goo\.gl\/maps|(?:www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+)\S*/i);
   if(mp){draft.client.maps=mp[0];var dm=$('#d_maps');if(dm)dm.value=mp[0];found.push('localisation');}
@@ -1080,7 +1085,7 @@ function riderSheet(keep){var l=rdraft.id?rider(rdraft.id):null;
   '<p class="hint">Seulement pour un livreur de confiance. Il voit ses colis (adresse, numéro du client, montant à encaisser) et marque lui-même « récupéré », « livré » ou « retour ». Il ne voit jamais vos prix d\'achat ni vos bénéfices.</p>'+
   (rdraft.acces?'<div class="kv"><span>Son code</span><b class="sel">'+esc(rdraft.code)+'</b></div><button class="linkbtn" data-act="r-newcode">Changer le code</button>':'')+'</div>'+
   '<button class="btn block" data-act="r-save">Enregistrer</button>'+(l?'<button class="linkbtn danger" data-act="r-del">Retirer ce livreur</button>':''),keep);}
-function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),code:ACC&&ACC.code||''};
+function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),zone:sp.zone||'',code:ACC&&ACC.code||''};
   openSheet('<div class="sh-head"><div><p class="eyebrow">Réglages</p><h2>Ma boutique</h2></div>'+closeBtn+'</div>'+
   '<label class="fld"><span>Nom de la boutique</span><input id="s_nom" data-s="nom" value="'+esc(sdraft.nom)+'"></label>'+
   '<div class="card blk"><b>Photo de profil et couverture <em>(facultatif)</em></b><p class="hint">Elles s\'affichent en haut de votre boutique en ligne, comme sur TikTok. Sans photo, la page reste simple.</p>'+
@@ -1096,6 +1101,7 @@ function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,te
   '<label class="fld"><span>Numéro Mixx by Yas <em>(ex Free Money)</em></span><input id="s_mixx" data-s="mixx" inputmode="tel" value="'+esc(fmtTel(sdraft.mixx))+'" placeholder="Laisser vide si vous n\'utilisez pas Mixx"></label></div>'+
   '<div class="card blk"><label class="check"><input type="checkbox" id="s_ret" data-ch="s-retrait"'+(sdraft.retrait?' checked':'')+'> Les clients peuvent passer récupérer</label>'+
   '<label class="fld"><span>Adresse et horaires du retrait</span><input id="s_adr" data-s="adresse" value="'+esc(sdraft.adresse)+'" placeholder="Ex. : Liberté 6, à côté de la pharmacie, 10h–20h"></label></div>'+
+  '<label class="fld"><span>Zone de livraison</span><input id="s_zone" data-s="zone" maxlength="60" value="'+esc(sdraft.zone)+'" placeholder="Ex. : Touba et environs, Louga ville, tout le Sénégal"><small class="hint">Vos clients la voient sur votre boutique en ligne. Vide = « Livraison à domicile ».</small></label>'+
   '<label class="fld"><span>Prix de la livraison habituel</span><input id="s_frais" data-s="frais" inputmode="numeric" value="'+esc(sdraft.frais)+'"><small class="hint">Utilisé pour les commandes de la boutique en ligne et du live. 0 = livraison gratuite.</small></label>'+
   '<button class="btn block" data-act="s-save">Enregistrer</button>'+
   (MODE==='owner'?ownerCards():'<div class="card blk"><b>Démo</b><p class="hint">Tout ce que vous changez reste seulement sur ce téléphone. Vous pouvez revenir aux exemples du début.</p><button class="btn ghost" data-act="s-reset">Recommencer la démo</button>'+(onSite()?'<button class="btn" data-act="go-welcome">Créer ma vraie boutique</button>':'')+'</div>'),keepD);}
@@ -1163,7 +1169,7 @@ function openClient(keep){
     openSheet(shHead(ey+' · '+sh,wait?'Liste d\'attente':'Votre panier')+top+
       '<div class="grid2"><label class="fld"><span>Votre nom</span><input data-c="nom" value="'+esc(cart.nom)+'" autocomplete="name"></label><label class="fld"><span>Numéro WhatsApp</span><input data-c="tel" inputmode="tel" value="'+esc(cart.tel)+'" autocomplete="tel"></label></div>'+
       modeChips(cart.mode,'c-mode')+
-      (cart.mode==='retrait'?'':'<label class="fld"><span>Quartier</span><input data-c="quartier" list="quartiersC" value="'+esc(cart.quartier)+'"></label><datalist id="quartiersC">'+QUARTIERS.map(function(x){return '<option value="'+esc(x)+'">';}).join('')+'</datalist>'+
+      (cart.mode==='retrait'?'':'<label class="fld"><span>Quartier</span><input data-c="quartier" list="quartiersC" value="'+esc(cart.quartier)+'"></label><datalist id="quartiersC">'+quartiers().map(function(x){return '<option value="'+esc(x)+'">';}).join('')+'</datalist>'+
         '<div class="fld"><span>Localisation <em>(facultatif)</em></span>'+(cart.geo?'<div class="geo-ok">'+PIN+' Position partagée'+(cart.geo.demo?' (exemple)':'')+'<button class="linkbtn danger" data-act="c-geo-del">Retirer</button></div>':'<button class="btn sm ghost" data-act="c-geo">'+PIN+' Partager ma position</button>')+
         (cart.geo?'':'<input data-c="maps" value="'+esc(cart.maps||'')+'" placeholder="ou collez un lien Google Maps" aria-label="Lien Google Maps">')+
         '<small class="hint">Le livreur trouve votre porte plus vite. Seuls la boutique et son livreur la voient, jusqu\'à la livraison.</small></div>')+
@@ -1194,7 +1200,7 @@ function openClient(keep){
     var vis=S.produits.filter(function(p){return p.visible;}), av=avisVis(), avg=avgNote(av);
     var hr=hero('Commandez en ligne');
     openSheet((hr&&solo()?'':shHead('Vue client','Boutique en ligne'))+hr+
-    '<div class="vt-head'+(hr?' slim':'')+'">'+(hr?'':'<span class="mark'+(imgOk(S.shop.logo)?' has-logo':'')+'" aria-hidden="true">'+markHTML()+'</span>')+'<div>'+(hr?'':'<b>'+sh+'</b>')+(av.length?'<span class="avg">'+stars(avg)+' <b>'+avg.toFixed(1).replace('.',',')+'</b> · '+plural(av.length,'avis client','avis clients')+'</span>':'')+'<small>Livraison Dakar et banlieue'+(S.shop.retrait?' ou retrait sur place':'')+(methods().length?' · '+methodsTxt()+' ou à la réception':'')+'</small></div></div>'+
+    '<div class="vt-head'+(hr?' slim':'')+'">'+(hr?'':'<span class="mark'+(imgOk(S.shop.logo)?' has-logo':'')+'" aria-hidden="true">'+markHTML()+'</span>')+'<div>'+(hr?'':'<b>'+sh+'</b>')+(av.length?'<span class="avg">'+stars(avg)+' <b>'+avg.toFixed(1).replace('.',',')+'</b> · '+plural(av.length,'avis client','avis clients')+'</span>':'')+'<small>'+(S.shop.zone?'Livraison : '+esc(S.shop.zone):'Livraison à domicile')+(S.shop.retrait?' ou retrait sur place':'')+(methods().length?' · '+methodsTxt()+' ou à la réception':'')+'</small></div></div>'+
     '<p class="hint">Ajoutez autant d\'articles que vous voulez, puis ouvrez le panier.</p>'+backNote()+myCmdBlock()+
     '<div class="vt-grid">'+vis.map(function(p){var pa=avisFor(p.id);return '<div class="vt-card">'+picBtn(p)+'<div class="in"><b>'+esc(p.nom)+'</b><span class="pr">'+F(p.vente)+'</span>'+(pa.length?'<span class="mini-rate">'+stars(avgNote(pa))+' ('+pa.length+')</span>':'')+(p.stock>0?'<span class="av-ok">Disponible</span>':'<span class="av-pre">Précommande · arrivage '+esc(p.arrivage||'bientôt')+'</span>')+addCtl(p)+(p.stock>0?'':'<button class="linkbtn" data-act="c-alert" data-id="'+p.id+'">Prévenez-moi à l\'arrivage</button>')+'</div></div>';}).join('')+'</div>'+
     (av.length?'<section class="blk"><h3>Ce que disent les clients</h3>'+av.slice(0,AVALL?30:3).map(function(a){return avisCard(a,false);}).join('')+(av.length>3&&!AVALL?'<button class="linkbtn" data-act="c-avall">Voir les '+av.length+' avis →</button>':'')+'</section>':'')+
@@ -1397,7 +1403,7 @@ function whenSB(cb){
 }
 function pageMsg(t,txt,retry,shop){openSheet(shHead(esc(S&&S.shop&&S.shop.nom||'Teranga Shop'),esc(t))+'<p class="hint">'+txt+'</p>'+(retry?'<button class="btn block" data-act="reload">Réessayer</button>':'')+(shop&&PUBCODE?'<button class="btn block ghost go-shop" data-act="go-shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>Voir la boutique · nouvelle commande</button>':''));}
 function shopBtn(){return MODE==='public'&&PUBCODE?'<button class="btn block ghost go-shop" data-act="go-shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>Voir la boutique · nouvelle commande</button>':'';}
-function emptyS(){return {v:9,shop:{nom:'Ma boutique',tel:'',wave:'',om:'',mixx:'',retrait:false,adresse:'',frais:1500},produits:[],commandes:[],livreurs:[],avis:[],live:{actif:false,debut:0,items:[],current:'',acompte:2000,delai:30,resa:[]}};}
+function emptyS(){return {v:9,shop:{nom:'Ma boutique',tel:'',wave:'',om:'',mixx:'',retrait:false,adresse:'',frais:1500,zone:''},produits:[],commandes:[],livreurs:[],avis:[],live:{actif:false,debut:0,items:[],current:'',acompte:2000,delai:30,resa:[]}};}
 function rnd(n){var s='';while(s.length<n)s+=Math.random().toString(36).slice(2);return s.slice(0,n);}
 function frDate(iso){return iso?String(iso).slice(0,10).split('-').reverse().join('/'):'';}
 
@@ -1587,7 +1593,7 @@ function startCard(){if(MODE!=='owner')return '';
 /* ---------- Premier démarrage en 3 étapes ---------- */
 function needOnb(){return MODE==='owner'&&!S.shop.onb&&!S.produits.length;}
 function openOnb(step){var sp=S.shop;
-  if(!ONB)ONB={nom:sp.nom||'',tel:sp.tel||(ACC&&ACC.phone)||'',wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:fraisDef(),p:{nom:'',vente:'',achat:'',stock:'1',photo:''}};
+  if(!ONB)ONB={nom:sp.nom||'',tel:sp.tel||(ACC&&ACC.phone)||'',wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:fraisDef(),zone:sp.zone||'',p:{nom:'',vente:'',achat:'',stock:'1',photo:''}};
   ONB.step=step;document.body.setAttribute('data-mode','welcome');window.scrollTo(0,0);
   var dots='<div class="ob-steps">'+[1,2,3,4].map(function(i){return '<i class="'+(i<=step?'on':'')+'"></i>';}).join('')+'</div>', h='';
   if(step===1)h=shHead('Étape 1 sur 3','Votre boutique')+
@@ -1600,6 +1606,7 @@ function openOnb(step){var sp=S.shop;
     '<label class="fld"><span>Wave</span><input data-ob="wave" inputmode="tel" value="'+esc(fmtTel(ONB.wave))+'" placeholder="Laisser vide si vous n\'utilisez pas Wave"></label>'+
     '<label class="fld"><span>Orange Money</span><input data-ob="om" inputmode="tel" value="'+esc(fmtTel(ONB.om))+'" placeholder="Laisser vide si vous n\'utilisez pas Orange Money"></label>'+
     '<label class="fld"><span>Mixx by Yas</span><input data-ob="mixx" inputmode="tel" value="'+esc(fmtTel(ONB.mixx))+'" placeholder="Laisser vide si vous n\'utilisez pas Mixx"></label></div>'+
+    '<label class="fld"><span>Où livrez-vous ?</span><input data-ob="zone" maxlength="60" value="'+esc(ONB.zone||'')+'" placeholder="Ex. : Touba et environs, Louga ville, tout le Sénégal"><small class="hint">Vos clients le voient sur votre boutique en ligne.</small></label>'+
     '<div class="fld"><span>Prix de la livraison habituel</span><div class="chips">'+[0,1000,1500,2000,2500].map(function(v){return '<button class="chip" data-act="ob-frais" data-v="'+v+'" aria-pressed="'+(ONB.frais===v)+'">'+(v?F(v):'Gratuite')+'</button>';}).join('')+'</div><small class="hint">Vous pourrez le changer pour chaque commande.</small></div>'+
     '<div class="card blk"><label class="check"><input type="checkbox" data-ch="ob-retrait"'+(ONB.retrait?' checked':'')+'> Les clients peuvent passer récupérer</label>'+
     (ONB.retrait?'<label class="fld"><span>Adresse et horaires</span><input data-ob="adresse" value="'+esc(ONB.adresse)+'" placeholder="Ex. : Liberté 6, à côté de la pharmacie, 10h–20h"></label>':'')+'</div>'+
@@ -1622,7 +1629,7 @@ function openOnb(step){var sp=S.shop;
     '<button class="btn block" data-act="ob-end">Commencer</button>';
   $('#view').innerHTML='<div class="page">'+dots+h+'</div>';}
 function onbSaveShop(){var sp=S.shop;sp.nom=(ONB.nom||'').trim()||'Ma boutique';sp.tel=normTel(ONB.tel);sp.wave=normTel(ONB.wave);sp.om=normTel(ONB.om);sp.mixx=normTel(ONB.mixx);
-  sp.retrait=ONB.retrait;sp.adresse=(ONB.adresse||'').trim();sp.frais=ONB.frais;save();$('#shopName').textContent=sp.nom;}
+  sp.retrait=ONB.retrait;sp.adresse=(ONB.adresse||'').trim();sp.frais=ONB.frais;sp.zone=String(ONB.zone||'').trim().slice(0,60);save();$('#shopName').textContent=sp.nom;}
 
 /* ---------- Notifications sur le téléphone du vendeur ---------- */
 function pushOk(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
@@ -2071,7 +2078,7 @@ document.addEventListener('click',function(e){
       if(bad.length){toast('Numéro '+PM[bad[0]]+' incomplet : 9 chiffres');break;}
       S.shop.nom=(sdraft.nom||'').trim()||'Ma boutique';S.shop.tel=normTel(sdraft.tel);
       S.shop.wave=normTel(sdraft.wave);S.shop.om=normTel(sdraft.om);S.shop.mixx=normTel(sdraft.mixx);
-      S.shop.retrait=sdraft.retrait;S.shop.adresse=(sdraft.adresse||'').trim();S.shop.frais=num(sdraft.frais);
+      S.shop.retrait=sdraft.retrait;S.shop.adresse=(sdraft.adresse||'').trim();S.shop.frais=num(sdraft.frais);S.shop.zone=(sdraft.zone||'').trim().slice(0,60);
       save();closeSheet();render();toast(methods().length?'Enregistré · paiement : '+methodsTxt():'Enregistré · aucun numéro de paiement');break;}
     case 's-reset':if(!armed(b,'Oui, revenir aux exemples'))break;S=seed();q='';filt='all';save();closeSheet();go('home');toast('Démo recommencée');break;
   }
