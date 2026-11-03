@@ -289,6 +289,9 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .avis-top small{color:var(--muted);font-size:12.5px}
 .avis p{font-size:14px}
 .avis-ph{width:120px;max-width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+.paychk{display:flex;flex-direction:column;gap:6px;background:var(--info-soft);border-radius:var(--r);padding:12px 14px}
+.paychk>b{color:var(--info);font-size:15px}
+.paychk .btn-row{margin-top:4px}
 .sv-avis{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:16px 14px 14px}
 .sv-avis b{font-size:16px}
 .sv-avis small{color:var(--muted);font-size:13px;max-width:34ch}
@@ -613,6 +616,13 @@ function benef(o){return o.lignes.reduce(function(a,l){return a+(l.prix-(l.achat
 function owes(o){return o.mode!=='retrait'&&o.statut==='livree'&&!o.verse&&aRemettre(o)>0;}
 function methods(){return ['wave','om','mixx'].filter(function(k){return normTel(S.shop[k]).length>=9;});}
 function methodsTxt(){var m=methods().map(function(k){return PM[k];});return m.length<2?(m[0]||''):m.slice(0,-1).join(', ')+' ou '+m[m.length-1];}
+function payOk(k){return k==='livraison'||methods().indexOf(k)>=0;}
+function waitPay(o){return !!o&&o.pay==='livraison'&&!!PM[o.payChoix]&&o.statut!=='livree'&&o.statut!=='retour';}
+function payNow(k,amt,num){if(!PM[k]||normTel(S.shop[k]).length<9)return '';return '<div class="card blk"><p>Pour payer, envoyez <b>'+F(amt)+'</b> par '+PM[k]+' :</p><div class="kv"><span>'+PM[k]+'</span><b class="sel">'+fmtTel(S.shop[k])+'</b></div><button class="btn sm ghost" data-act="copy" data-text="'+fmtTel(S.shop[k])+'">Copier le numéro '+PMS[k]+'</button></div>'+
+  '<a class="btn block" href="'+wa(S.shop.tel,'Bonjour, j\'ai payé ma commande n°'+num+' par '+PM[k]+' : '+F(amt)+'. Voici la capture.')+'" target="_blank" rel="noopener">J\'ai payé : envoyer la capture sur WhatsApp</a>';}
+function payChips(){var m=methods();if(!m.length)return '';var rt=cart.mode==='retrait',cur=payOk(cart.pay)?cart.pay:'';
+  return '<div class="fld"><span>Comment voulez-vous payer ?</span><div class="chips" role="group" aria-label="Paiement">'+[['livraison',rt?'Sur place':'À la livraison']].concat(m.map(function(k){return [k,PM[k]];})).map(function(x){return '<button class="chip" data-act="c-pay" data-v="'+x[0]+'" aria-pressed="'+(cur===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
+    (cur==='livraison'?'<small class="hint">'+(rt?'Vous payez en passant récupérer':'Vous payez au livreur')+', en espèces ou par '+methodsTxt()+'.</small>':cur?'<small class="hint">Après la commande, vous voyez le numéro '+PM[cur]+' de la boutique et le montant à envoyer.</small>':'')+'</div>';}
 function payNums(){return methods().map(function(k){return '• '+PM[k]+' : '+fmtTel(S.shop[k]);}).join('\n');}
 function optNom(p){return (p&&p.optNom)||'Taille';}
 function setSt(o,st){o.statut=st;o.hist=o.hist||{};o.hist[st]=Date.now();}
@@ -661,7 +671,7 @@ function prenom(l){return l?l.nom.split(' ')[0]:'';}
 function declared(id){return S.commandes.filter(function(o){return o.livreurId===id&&owes(o)&&o.remise;});}
 function newCode(){var c,n=MODE==='owner'?6:4;do{c=String(Math.pow(10,n-1)+Math.floor(Math.random()*9*Math.pow(10,n-1)));}while(S.livreurs.some(function(l){return l.code===c;}));return c;}
 function livLink(){return SITE+'?b='+shopCode()+'&livreur';}
-function payShort(o){if(o.payeVia==='direct')return 'Payé à la boutique';if(o.payeVia)return o.payeVia==='especes'?'Payé en espèces':'Payé '+PMS[o.payeVia];if(o.pay==='acompte')return 'Acompte '+F(o.acompte);if(PMS[o.pay])return 'Payé '+PMS[o.pay];return o.mode==='retrait'?'Sur place':'À la livraison';}
+function payShort(o){if(o.payeVia==='direct')return 'Payé à la boutique';if(o.payeVia)return o.payeVia==='especes'?'Payé en espèces':'Payé '+PMS[o.payeVia];if(o.pay==='acompte'&&o.acompte>=total(o))return 'Payé '+(PMS[o.acompteVia]||'');if(o.pay==='acompte')return 'Acompte '+F(o.acompte);if(o.pay==='livraison'&&PM[o.payChoix])return PMS[o.payChoix]+' à vérifier';if(PMS[o.pay])return 'Payé '+PMS[o.pay];return o.mode==='retrait'?'Sur place':'À la livraison';}
 function itemsTxt(o){return o.lignes.map(function(l){return (l.qte>1?l.qte+' × ':'')+l.nom+(l.taille?' ('+l.taille+')':'');}).join(', ');}
 function plural(n,a,b){return n+' '+(n>1?b:a);}
 var closeBtn='<button class="icon-btn" data-act="close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
@@ -691,6 +701,7 @@ function homeHTML(){
   var dstr=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   var aTraiter=nouv.length+conf.length;
   var todo=[];
+  S.commandes.filter(waitPay).forEach(function(o){todo.push(['open-order',o.id,'warn','Vérifiez le paiement '+PM[o.payChoix]+' de '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+F(total(o))+' · regardez vos notifications '+PMS[o.payChoix]]);});
   nouv.forEach(function(o){todo.push(['open-order',o.id,'info','Confirmer la commande de '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+SRC[o.src]+' · '+F(total(o))]);});
   conf.filter(function(o){return !o.livreurId&&o.mode!=='retrait';}).forEach(function(o){todo.push(['open-order',o.id,'sun','Choisir un livreur pour '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+(o.client.quartier||'adresse à préciser')]);});
   S.livreurs.forEach(function(l){var s=riderOwed(l.id),dc=declared(l.id);if(dc.length){var ds=dc.reduce(function(a,o){return a+aRemettre(o);},0);todo.unshift(['tab','riders','warn',prenom(l)+' dit avoir envoyé '+F(ds)+' par '+(PM[dc[0].remise.via]||'espèces'),'Vérifiez et confirmez la réception']);}else if(s>0)todo.push(['tab','riders','warn',l.nom+' doit vous remettre '+F(s),'Argent des colis déjà livrés']);});
@@ -870,7 +881,8 @@ function actionsHTML(o){
 function showOrder(id,keep){
   var o=byId(id);if(!o){closeSheet();return;}
   var s=ST[o.statut], r=rider(o.livreurId), tel=o.client.tel;
-  var payTxt=o.pay==='acompte'?'Acompte de '+F(o.acompte)+' reçu'+(o.acompteVia?' ('+PM[o.acompteVia]+')':''):o.pay==='livraison'?(o.mode==='retrait'?'Sur place':'À la livraison'):PAY[o.pay];
+  var payTxt=o.pay==='acompte'?(o.acompte>=total(o)?'Tout payé':'Acompte de '+F(o.acompte)+' reçu')+(o.acompteVia?' ('+PM[o.acompteVia]+')':''):o.pay==='livraison'?(PM[o.payChoix]?PM[o.payChoix]+' · à vérifier':(o.mode==='retrait'?'Sur place':'À la livraison')):PAY[o.pay];
+  var payChk=waitPay(o)?'<div class="paychk"><b>Le client paie par '+PM[o.payChoix]+' : '+F(total(o))+'</b><p class="hint">Regardez vos notifications '+PM[o.payChoix]+'. S\'il a payé, touchez le bouton vert : '+(o.mode==='retrait'?'il n\'aura plus rien à payer sur place.':'le livreur n\'aura rien à encaisser.')+'</p><div class="btn-row"><button class="btn sm ok" data-act="o-paid" data-id="'+o.id+'">Payé '+PMS[o.payChoix]+' ✓</button><button class="btn sm ghost" data-act="o-paylater" data-id="'+o.id+'">Il paiera '+(o.mode==='retrait'?'sur place':'à la livraison')+'</button></div></div>':'';
   var paid=!!PMS[o.pay];
   var riderSel=o.mode==='retrait'?'':['nouvelle','prete','en_route'].indexOf(o.statut)>=0?'<label class="fld"><span>Livreur</span><select data-ch="o-rider" data-id="'+o.id+'"><option value="">— Choisir un livreur —</option>'+S.livreurs.map(function(l){return '<option value="'+l.id+'"'+(l.id===o.livreurId?' selected':'')+'>'+esc(l.nom)+' · '+esc(l.zone)+'</option>';}).join('')+'</select></label>':(r?'<div class="kv"><span>Livreur</span><b>'+esc(r.nom)+'</b></div>':'');
   var msgs=o.mode==='retrait'?[['confirm','Confirmation'],['suivi','Lien de suivi'],['pret','Prête à récupérer'],['merci','Merci + avis']]:[['confirm','Confirmation'],['suivi','Lien de suivi'],['route','Colis en route'],['merci','Merci + avis']].concat(r&&r.acces?[]:[['livreur','Fiche pour le livreur']]);
@@ -891,9 +903,10 @@ function showOrder(id,keep){
     (o.statut==='retour'?'':o.statut==='livree'?
       /* commande terminée : l'argent est déjà encaissé, on ne l'affiche plus comme « à payer » */
       '<div class="kv"><span>'+(o.mode==='retrait'?'Payé sur place':'Encaissé par le livreur'+(paid?' (livraison)':''))+(o.payeVia&&o.payeVia!=='direct'?' · '+(o.payeVia==='especes'?'espèces':PM[o.payeVia]):'')+'</span><b>'+F(aEncaisser(o))+'</b></div>':
+      aEncaisser(o)<=0?'<div class="kv"><span>'+(o.mode==='retrait'?'À payer sur place':'Le livreur encaisse')+'</span><b>Rien, tout est payé</b></div>':
       '<div class="kv hl"><span>'+(o.mode==='retrait'?'À payer sur place':'Le livreur encaisse'+(paid?' (livraison)':''))+'</span><b>'+F(aEncaisser(o))+'</b></div>')+
     '<div class="kv gain"><span>Votre bénéfice</span><b>'+F(benef(o))+'</b></div></div></div>'+
-  '<div class="blk">'+riderSel+(o.transfert?'<p class="hint"><b>'+esc(prenom(rider(o.transfert.de)))+'</b> passe ce colis à <b>'+esc(prenom(rider(o.transfert.vers)))+'</b> : en attente de sa confirmation.</p>':'')+actionsHTML(o)+'</div>'+
+  '<div class="blk">'+payChk+riderSel+(o.transfert?'<p class="hint"><b>'+esc(prenom(rider(o.transfert.de)))+'</b> passe ce colis à <b>'+esc(prenom(rider(o.transfert.vers)))+'</b> : en attente de sa confirmation.</p>':'')+actionsHTML(o)+'</div>'+
   (o.trace&&o.trace.length?'<div class="blk"><h3>Historique du colis</h3><ul class="trace">'+o.trace.map(function(x){return '<li><small>'+when(x.t)+'</small><span>'+esc(x.txt)+'</span></li>';}).join('')+'</ul></div>':'')+
   '<div class="blk"><h3>Messages WhatsApp prêts</h3><div class="chips">'+msgs.map(function(m){return '<button class="chip" data-act="o-msg" data-id="'+o.id+'" data-k="'+m[0]+'" aria-pressed="false">'+m[1]+'</button>';}).join('')+'</div>'+msgHint+'<div id="msgBox" class="blk"></div></div>'+
   '<div class="blk"><h3>Pages du client</h3><div class="btn-row"><button class="btn sm ghost" data-act="o-suivi" data-id="'+o.id+'">Voir son suivi</button>'+(o.statut==='livree'?'<button class="btn sm ghost" data-act="o-avis" data-id="'+o.id+'">'+(hasAvis?'Avis reçu':'Sa page d\'avis')+'</button>':'')+'</div></div>'+
@@ -904,11 +917,11 @@ function tpl(o,k){
   var lines=o.lignes.map(function(l){return '• '+l.qte+' × '+l.nom+(l.taille?' ('+l.taille+')':'')+' : '+F(l.prix*l.qte);}).join('\n');
   if(k==='confirm'){
     var rt=o.mode==='retrait', where=rt?'sur place':'à la livraison';
-    var pay=o.pay==='livraison'?'À payer '+where+' : '+F(enc):o.pay==='acompte'?'Acompte reçu : '+F(o.acompte)+'\nReste à payer '+where+' : '+F(enc):'Articles déjà payés par '+(PM[o.pay]||'')+' ✅'+(o.frais?'\nLivraison à régler au livreur : '+F(o.frais):'');
+    var pay=enc<=0&&o.pay==='acompte'?'Tout est payé'+(o.acompteVia?' par '+PM[o.acompteVia]:'')+' ✅':o.pay==='livraison'&&PM[o.payChoix]&&normTel(S.shop[o.payChoix]).length>=9?'À payer par '+PM[o.payChoix]+' : '+F(enc)+'\n• '+PM[o.payChoix]+' : '+fmtTel(S.shop[o.payChoix])+'\nEnvoyez-nous la capture ici après le paiement.':o.pay==='livraison'?'À payer '+where+' : '+F(enc):o.pay==='acompte'?'Acompte reçu : '+F(o.acompte)+'\nReste à payer '+where+' : '+F(enc):'Articles déjà payés par '+(PM[o.pay]||'')+' ✅'+(o.frais?'\nLivraison à régler au livreur : '+F(o.frais):'');
     return hi+' 👋\nVotre commande n°'+o.num+' chez '+shop+' est confirmée :\n'+lines+(rt?'':'\nLivraison : '+F(o.frais))+'\nTotal : '+F(total(o))+'\n'+pay+'\n\n'+(rt?'Retrait : '+(S.shop.adresse||'à la boutique'):'Adresse : '+(o.client.quartier||'à préciser'))+'\nMerci pour votre confiance 🙏';
   }
-  if(k==='pret')return hi+', votre commande n°'+o.num+' est prête ✅\nVous pouvez passer la récupérer : '+(S.shop.adresse||'à la boutique')+'\nÀ payer sur place : '+F(enc)+'\n'+shop;
-  if(k==='route')return hi+', votre colis n°'+o.num+' est en route 🛵\nVotre livreur : '+r.nom+' ('+fmtTel(r.tel)+')\nMontant à lui remettre : '+F(enc)+'\nMerci de rester joignable 🙏\n'+shop;
+  if(k==='pret')return hi+', votre commande n°'+o.num+' est prête ✅\nVous pouvez passer la récupérer : '+(S.shop.adresse||'à la boutique')+'\n'+(enc>0?'À payer sur place : '+F(enc):'Tout est déjà payé ✅')+'\n'+shop;
+  if(k==='route')return hi+', votre colis n°'+o.num+' est en route 🛵\nVotre livreur : '+r.nom+' ('+fmtTel(r.tel)+')\n'+(enc>0?'Montant à lui remettre : '+F(enc):'Rien à payer au livreur : tout est réglé ✅')+'\nMerci de rester joignable 🙏\n'+shop;
   if(k==='suivi')return hi+' 👋\nSuivez votre commande n°'+o.num+' chez '+shop+' ici :\nhttps://'+suiviLink(o)+'\nVous voyez quand elle est confirmée, en route et livrée.';
   if(k==='merci')return 'Merci'+(nom&&nom.charAt(0)!=='@'?' '+nom:'')+' pour votre achat chez '+shop+' 💛\nDonnez votre avis en 1 minute (avec une photo si vous voulez) :\nhttps://'+avisLink(o)+'\nNos nouveaux arrivages passent sur notre page TikTok et notre statut WhatsApp.';
   return '📦 Colis n°'+o.num+' · '+shop+'\nClient : '+(o.client.nom||'—')+' · '+(fmtTel(o.client.tel)||'—')+'\nAdresse : '+(o.client.quartier||'—')+'\n'+lines+'\nÀ encaisser : '+F(enc)+' (dont livraison '+F(o.frais)+')'+(o.note?'\nNote : '+o.note:'');
@@ -990,6 +1003,7 @@ function saveDraft(){
 function createOrder(d){
   var n=Math.max.apply(null,[1000].concat(S.commandes.map(function(o){return o.num;})))+1;
   var rt0=d.mode==='retrait', o={id:'o'+Date.now(),tk:newTk(),num:n,date:Date.now(),client:{nom:(d.client.nom||'').trim(),tel:normTel(d.client.tel),quartier:(d.client.quartier||'').trim(),geo:rt0?null:(d.client.geo||null),maps:rt0?'':String(d.client.maps||'').trim()},src:d.src,lignes:d.lignes.map(function(l){return Object.assign({},l);}),frais:d.mode==='retrait'?0:d.frais,pay:d.pay,acompte:d.pay==='acompte'?d.acompte:0,acompteVia:d.pay==='acompte'?(d.acompteVia||''):'',statut:'nouvelle',hist:{nouvelle:Date.now()},livreurId:'',verse:false,note:(d.note||'').trim(),mode:d.mode||'livraison',payeVia:'',trace:[],transfert:null,remise:null};
+  if(PM[d.payChoix])o.payChoix=d.payChoix;
   o.lignes.forEach(function(l){var p=prod(l.pid);if(p)setStock(p,p.stock-l.qte);});
   S.commandes.push(o);return o;
 }
@@ -1058,12 +1072,13 @@ function openClients(){
 /* Panier gardé sur le téléphone du client (boutique en ligne et live séparés) */
 function cartKey(ctx){return 'teranga-shop-panier-'+(MODE==='public'?PUBCODE+'-':'')+ctx;}
 function loadCart(ctx){try{var r=localStorage.getItem(cartKey(ctx));return r?JSON.parse(r):null;}catch(e){return null;}}
-function saveCart(){if(!cart)return;cart.back=0;try{localStorage.setItem(cartKey(cart.ctx),JSON.stringify({lines:cart.lines.concat(cart.away||[]),nom:cart.nom,tel:cart.tel,quartier:cart.quartier,mode:cart.mode,t:Date.now()}));}catch(e){}}
+function saveCart(){if(!cart)return;cart.back=0;try{localStorage.setItem(cartKey(cart.ctx),JSON.stringify({lines:cart.lines.concat(cart.away||[]),nom:cart.nom,tel:cart.tel,quartier:cart.quartier,mode:cart.mode,pay:cart.pay||'',t:Date.now()}));}catch(e){}}
 function newCart(ctx){
-  var c={ctx:ctx,step:'list',lines:[],away:[],back:0,nom:'',tel:'',quartier:'',mode:'livraison',pid:'',taille:'',rid:'',onum:0}, sv=loadCart(ctx);
+  var c={ctx:ctx,step:'list',lines:[],away:[],back:0,nom:'',tel:'',quartier:'',mode:'livraison',pay:'',pid:'',taille:'',rid:'',onum:0}, sv=loadCart(ctx);
   if(!sv)return c;
   ['nom','tel','quartier'].forEach(function(k){c[k]=String(sv[k]||'');});
   if(sv.mode==='retrait'&&S.shop.retrait)c.mode='retrait';
+  if(sv.pay&&payOk(sv.pay))c.pay=sv.pay;
   var used={};
   (sv.lines||[]).forEach(function(l){var p=prod(l.pid);if(!p||!(l.qte>0))return;
     var max=ctx==='lv'?(S.live.items.indexOf(p.id)>=0?avail(p.id):0):(p.visible?(p.stock>0?p.stock:10):0), q=Math.min(l.qte,max-(used[p.id]||0));
@@ -1112,14 +1127,14 @@ function openClient(keep){
         '<div class="fld"><span>Localisation <em>(facultatif)</em></span>'+(cart.geo?'<div class="geo-ok">'+PIN+' Position partagée'+(cart.geo.demo?' (exemple)':'')+'<button class="linkbtn danger" data-act="c-geo-del">Retirer</button></div>':'<button class="btn sm ghost" data-act="c-geo">'+PIN+' Partager ma position</button>')+
         (cart.geo?'':'<input data-c="maps" value="'+esc(cart.maps||'')+'" placeholder="ou collez un lien Google Maps" aria-label="Lien Google Maps">')+
         '<small class="hint">Le livreur trouve votre porte plus vite. Seuls la boutique et son livreur la voient, jusqu\'à la livraison.</small></div>')+
-      (!lv&&methods().length?'<p class="hint">Paiement : '+methodsTxt()+' ou '+(cart.mode==='retrait'?'sur place':'à la livraison')+'.</p>':'')+
+      (!lv?payChips():'')+
       '<button class="btn block" data-act="'+(wait?'c-sendwait':'c-send')+'"'+(!wait&&!cart.lines.length?' disabled':'')+'>'+(wait?'M\'inscrire sur la liste d\'attente':lv?'Réserver':'Envoyer ma commande')+'</button>'+
       '<button class="linkbtn" data-act="c-back">← '+(wait?'Retour aux articles':'Ajouter d\'autres articles')+'</button>',keep);
     return;
   }
   if(cart.step==='done'){
     var body;
-    if(!lv)body='<div class="big-ok">Merci ! Votre commande n°'+cart.onum+' est envoyée.</div><p class="hint">'+sh+' vous confirme sur WhatsApp. Vous pouvez suivre votre commande à tout moment.</p><button class="btn block" data-act="c-suivi">Suivre ma commande</button>'+(MODE==='demo'?'<p class="vt-note">Démo : la commande est arrivée dans l\'onglet Commandes.</p><button class="btn block ghost" data-act="c-orders">Voir dans Commandes</button>':'');
+    if(!lv)body='<div class="big-ok">Merci ! Votre commande n°'+cart.onum+' est envoyée.</div>'+(PM[cart.opay]?payNow(cart.opay,cart.otot,cart.onum)+'<p class="hint">'+sh+' vérifie votre paiement et vous confirme sur WhatsApp. Vous pouvez suivre votre commande à tout moment.</p><button class="btn block ghost" data-act="c-suivi">Suivre ma commande</button>':'<p class="hint">'+sh+' vous confirme sur WhatsApp. Vous pouvez suivre votre commande à tout moment.</p><button class="btn block" data-act="c-suivi">Suivre ma commande</button>')+(MODE==='demo'?'<p class="vt-note">Démo : la commande est arrivée dans l\'onglet Commandes.</p><button class="btn block ghost" data-act="c-orders">Voir dans Commandes</button>':'');
     else{
       var r=resaById(cart.rid);
       if(!r)body='<p class="hint">Réservation introuvable.</p>';
@@ -1179,7 +1194,7 @@ function openLivreur(keep){
   var others=S.livreurs.filter(function(l){return l.id!==me.id;});
   function head(o){var e=aEncaisser(o);
     if(!livAccess(o))return '<div class="resa-top"><b>Colis #'+o.num+'</b><span class="pill st-bad">Données masquées</span></div><p class="resa-l">Plus de '+ACCES_H+' h depuis le retrait : le nom, le numéro, l\'adresse et la position du client sont masqués.</p><p class="resa-l">À encaisser : <b>'+(e?F(e):'rien, déjà payé')+'</b></p>';
-    return '<div class="resa-top"><b>#'+o.num+' · '+esc(o.client.nom||fmtTel(o.client.tel))+'</b>'+(routeLink(o.client)?'<span class="geo-tag">'+PIN+' Position</span>':'')+'</div><p class="resa-l"><b>'+esc(o.client.quartier||'Adresse à demander')+'</b> · '+esc(itemsTxt(o))+'</p><p class="resa-l">À encaisser : <b>'+(e?F(e):'rien, déjà payé')+'</b></p>'+(o.note?'<p class="resa-l">Note : '+esc(o.note)+'</p>':'');}
+    return '<div class="resa-top"><b>#'+o.num+' · '+esc(o.client.nom||fmtTel(o.client.tel))+'</b>'+(routeLink(o.client)?'<span class="geo-tag">'+PIN+' Position</span>':'')+'</div><p class="resa-l"><b>'+esc(o.client.quartier||'Adresse à demander')+'</b> · '+esc(itemsTxt(o))+'</p><p class="resa-l">À encaisser : <b>'+(e?F(e):'rien, déjà payé')+'</b></p>'+(waitPay(o)?'<p class="resa-l">Le client a choisi '+PM[o.payChoix]+' : la boutique vérifie. Si elle confirme, vous n\'encaissez rien.</p>':'')+(o.note?'<p class="resa-l">Note : '+esc(o.note)+'</p>':'');}
   function contact(o){var rl=routeLink(o.client),wz=wazeLink(o.client);return (rl?'<div class="btn-row"><a class="btn sm soft" href="'+rl+'" target="_blank" rel="noopener">'+PIN+' Google Maps</a>'+(wz?'<a class="btn sm ghost" href="'+wz+'" target="_blank" rel="noopener">Waze</a>':'')+'</div>':'')+
     (o.client.tel?'<div class="kv"><span>Client</span><b class="sel">'+fmtTel(o.client.tel)+'</b></div><a class="btn sm ghost" href="'+wa(o.client.tel,'Bonjour, je suis '+prenom(me)+', le livreur de '+(S.shop.nom||'la boutique')+'. J\'arrive avec votre commande n°'+o.num+'.')+'" target="_blank" rel="noopener">Prévenir le client sur WhatsApp</a>':'');}
   function partTxt(o,tr){var f=o.frais||0;if(!f)return '';var de=prenom(rider(tr.de));
@@ -1234,7 +1249,8 @@ function openSuivi(oid,fromOrder){
   openSheet(shHead('Vue client · '+esc(S.shop.nom||''),'Commande n°'+o.num)+tl+
     '<div class="sum">'+o.lignes.map(function(l){return '<div class="kv"><span>'+l.qte+' × '+esc(l.nom)+(l.taille?' · '+esc(l.taille):'')+'</span><b>'+F(l.prix*l.qte)+'</b></div>';}).join('')+
     (rt?'':'<div class="kv"><span>Livraison</span><b>'+(o.frais?F(o.frais):'Gratuite')+'</b></div>')+'<div class="kv total"><span>Total</span><b>'+F(total(o))+'</b></div>'+
-    (st!=='livree'&&st!=='retour'?'<div class="kv hl"><span>'+(rt?'À payer sur place':'À payer à la livraison')+'</span><b>'+F(due)+'</b></div>':'')+'</div>'+
+    (st==='livree'||st==='retour'?'':due<=0?'<div class="kv"><span>Paiement</span><b>Tout payé ✓'+(o.acompteVia?' · '+PM[o.acompteVia]:'')+'</b></div>':'<div class="kv hl"><span>'+(waitPay(o)?'À payer par '+PM[o.payChoix]:rt?'À payer sur place':'À payer à la livraison')+'</span><b>'+F(due)+'</b></div>')+'</div>'+
+    (waitPay(o)&&normTel(S.shop[o.payChoix]).length>=9?'<p class="hint">'+esc(S.shop.nom||'La boutique')+' vérifie votre paiement. Pas encore payé ?</p>'+payNow(o.payChoix,due,o.num):'')+
     (st==='livree'?(function(){var dj=(S.avis||[]).some(function(x){return x.orderId===o.id;});
       return '<div class="sv-avis"><span class="sv-stars" aria-hidden="true">★★★★★</span><b>'+(dj?'Merci pour votre avis !':(rt?'Votre achat vous plaît ?':'Votre commande est bien arrivée ?'))+'</b>'+
         (dj?'':'<small>Donnez votre avis en 1 minute : il aide d\'autres clients à commander en confiance.</small>')+
@@ -1640,6 +1656,7 @@ function pubSend(a,b){
   if(!cart.nom.trim()||normTel(cart.tel).length<9){toast('Écrivez votre nom et votre numéro WhatsApp');return;}
   if(isW&&sizes(prod(cart.pid)).length&&!cart.taille){toast('Choisissez : '+optNom(prod(cart.pid)).toLowerCase());return;}
   if(!isW&&!cart.lines.length)return;
+  if(!lv&&methods().length&&!payOk(cart.pay)){toast('Choisissez comment vous voulez payer');return;}
   var rt=cart.mode==='retrait', cl={nom:cart.nom.trim(),tel:normTel(cart.tel),quartier:rt?'':(cart.quartier||'').trim(),geo:rt?null:(cart.geo&&!cart.geo.demo?{lat:cart.geo.lat,lng:cart.geo.lng}:null),maps:rt||cart.geo?'':String(cart.maps||'').trim()};
   var lines=isW?[{pid:cart.pid,qte:1,taille:cart.taille}]:cart.lines.map(function(l){return {pid:l.pid,qte:l.qte,taille:l.taille};});
   b.disabled=true;var old=b.textContent;b.textContent='Envoi…';
@@ -1650,9 +1667,10 @@ function pubSend(a,b){
       S.live.resa.push({id:r.id,tk:r.tk,lignes:lines,client:cl,statut:r.statut,date:Date.now(),expire:r.expire?(+r.expire-((r.now||Date.now())-Date.now())):0,promu:false,mode:cart.mode,pos:isW?1:0});
       cart.rid=r.id;if(!isW)cart.lines=[];saveCart();cart.step='done';openClient();if(isW)resaEtat(r.id).then(function(){if(cart&&cart.step==='done')openClient(true);});})
     .catch(function(e){done();toast(errMsg(e));});
-  else rpc('shop_commander',{p_code:PUBCODE,p:{client:cl,lignes:lines,mode:cart.mode}}).then(function(r){
-      cart.onum=r.num;cart.oid=r.id;cart.otk=r.tk;cart.lines=[];saveCart();cart.step='done';openClient();pubLoad();})
-    .catch(function(e){done();toast(errMsg(e));});
+  else{var pc=PM[cart.pay]&&payOk(cart.pay)?cart.pay:'', ot=cartTot()+(rt?0:fraisDef());
+    rpc('shop_commander',{p_code:PUBCODE,p:{client:cl,lignes:lines,mode:cart.mode,payChoix:pc}}).then(function(r){
+      cart.onum=r.num;cart.oid=r.id;cart.otk=r.tk;cart.opay=r.payChoix===undefined?pc:r.payChoix;cart.otot=r.total||ot;cart.lines=[];saveCart();cart.step='done';openClient();pubLoad();})
+    .catch(function(e){done();toast(errMsg(e));});}
 }
 
 /* ---------- Espace livreur (avec son code) ---------- */
@@ -1878,6 +1896,9 @@ document.addEventListener('click',function(e){
     case 'c-go':cart.step='cart';openClient();break;
     case 'c-back':cart.step='list';openClient();break;
     case 'c-mode':cart.mode=b.dataset.v;saveCart();openClient(true);break;
+    case 'c-pay':cart.pay=b.dataset.v;saveCart();openClient(true);break;
+    case 'o-paid':o=byId(id);if(!o||!PM[o.payChoix])break;o.pay='acompte';o.acompte=total(o);o.acompteVia=o.payChoix;save();render();showOrder(id,true);toast('Paiement '+PM[o.acompteVia]+' noté : tout est payé');break;
+    case 'o-paylater':o=byId(id);if(!o)break;o.payChoix='';save();render();showOrder(id,true);toast(o.mode==='retrait'?'Le client paiera sur place':'Le client paiera à la livraison');break;
     case 'c-to-vt':{var vs=loadCart('vt')||{lines:[]};vs.lines=(vs.lines||[]).concat(cart.away);try{localStorage.setItem(cartKey('vt'),JSON.stringify(Object.assign(vs,{nom:vs.nom||cart.nom,tel:vs.tel||cart.tel,quartier:vs.quartier||cart.quartier})));}catch(e){}
       cart.away=[];saveCart();cart=newCart('vt');openClient();toast('Vos articles sont dans le panier de la boutique');break;}
     case 'c-geo':b.disabled=true;b.textContent='Recherche de votre position…';getGeo(function(g){if(!cart)return;if(g.demo&&MODE!=='demo'){toast('Position introuvable : autorisez la localisation, ou collez un lien Google Maps');openClient(true);return;}cart.geo=g;openClient(true);toast(g.demo?'Démo : position d\'exemple. Sur le vrai site, c\'est la vraie position du client.':'Position partagée');});break;
@@ -1889,14 +1910,15 @@ document.addEventListener('click',function(e){
       if(!cart.nom.trim()||normTel(cart.tel).length<9){toast('Écrivez votre nom et votre numéro WhatsApp');break;}
       if(isW&&sizes(prod(cart.pid)).length&&!cart.taille){toast('Choisissez : '+optNom(prod(cart.pid)).toLowerCase());break;}
       if(!isW&&!cart.lines.length)break;
+      if(!lv&&methods().length&&!payOk(cart.pay)){toast('Choisissez comment vous voulez payer');break;}
       var rt1=cart.mode==='retrait', cl={nom:cart.nom.trim(),tel:normTel(cart.tel),quartier:rt1?'':(cart.quartier||'').trim(),geo:rt1?null:(cart.geo||null),maps:rt1||cart.geo?'':String(cart.maps||'').trim()};
       if(lv){
         if(!isW){var short=cart.lines.filter(function(l){return cartQty(l.pid)>avail(l.pid);})[0];if(short){toast('Plus assez de '+prod(short.pid).nom+' : enlevez-en un');break;}}
         var n2=Date.now(), nr={id:'r'+n2,lignes:isW?[{pid:cart.pid,qte:1,taille:cart.taille}]:cart.lines.map(function(l){return {pid:l.pid,qte:l.qte,taille:l.taille};}),client:cl,statut:isW?'liste':'attente',date:n2,expire:isW?0:n2+S.live.delai*60e3,orderId:'',promu:false,mode:cart.mode};
         S.live.resa.push(nr);cart.rid=nr.id;if(!isW)cart.lines=[];saveCart();cart.step='done';save();render();openClient();toast(isW?'Ajoutée à la liste d\'attente':'Réservation reçue dans l\'onglet Live');
       }else{
-        o=createOrder({client:cl,src:'vitrine',lignes:cart.lines.map(function(l){return lineFrom(prod(l.pid),l.qte,l.taille);}),frais:fraisDef(),pay:'livraison',acompte:0,note:'',mode:cart.mode});
-        cart.onum=o.num;cart.oid=o.id;cart.lines=[];saveCart();cart.step='done';save();render();openClient();toast('Commande #'+o.num+' reçue dans vos Commandes');
+        o=createOrder({client:cl,src:'vitrine',lignes:cart.lines.map(function(l){return lineFrom(prod(l.pid),l.qte,l.taille);}),frais:fraisDef(),pay:'livraison',acompte:0,note:'',mode:cart.mode,payChoix:PM[cart.pay]?cart.pay:''});
+        cart.onum=o.num;cart.oid=o.id;cart.opay=o.payChoix||'';cart.otot=total(o);cart.lines=[];saveCart();cart.step='done';save();render();openClient();toast('Commande #'+o.num+' reçue dans vos Commandes');
       }
       break;}
     case 'd-mode':draft.mode=b.dataset.v;if(draft.mode==='livraison'&&!draft.frais)draft.frais=fraisDef()||1500;renderDraft(true);break;
