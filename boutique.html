@@ -845,8 +845,8 @@ function actionsHTML(o){
   var r=rider(o.livreurId);
   if(o.mode==='retrait'){
     var due=aEncaisser(o);
-    if(o.statut==='prete')return '<div class="kv hl"><span>À payer sur place</span><b>'+F(due)+'</b></div>'+
-      (due>0?'<p class="hint">Quand le client passe, touchez comment il a payé :</p><div class="btn-row">'+['especes'].concat(methods()).map(function(k){return '<button class="btn sm ok" data-act="o-pickup" data-id="'+o.id+'" data-v="'+k+'">'+(k==='especes'?'Espèces':PMS[k])+'</button>';}).join('')+'</div>':'<button class="btn block ok" data-act="o-pickup" data-id="'+o.id+'" data-v="">Le client a récupéré</button>')+
+    if(o.statut==='prete')return ''+
+      (due>0?'<p class="hint">Quand le client passe, touchez comment il a payé les <b>'+F(due)+'</b>&nbsp;:</p><div class="btn-row">'+['especes'].concat(methods()).map(function(k){return '<button class="btn sm ok" data-act="o-pickup" data-id="'+o.id+'" data-v="'+k+'">'+(k==='especes'?'Espèces':PMS[k])+'</button>';}).join('')+'</div>':'<button class="btn block ok" data-act="o-pickup" data-id="'+o.id+'" data-v="">Le client a récupéré</button>')+
       '<button class="linkbtn danger" data-act="o-return" data-id="'+o.id+'">Le client n\'est pas venu</button>';
     if(o.statut==='livree')return '<p class="done">Récupérée'+(o.payeVia?' · '+payShort(o):'')+'</p>';
     if(o.statut==='retour')return '<p class="hint">L\'article est revenu dans le stock.</p><button class="btn block ghost" data-act="o-retry" data-id="'+o.id+'">Remettre à récupérer</button>';
@@ -1594,7 +1594,15 @@ function applyPub(r){SKEW=(r.now||Date.now())-Date.now();var keep=S&&S.live&&S.l
 function pubLoad(cb){return rpc('shop_public',{p_code:PUBCODE}).then(function(r){if(!r||!r.ok){pubClosed(r&&r.raison);return;}applyPub(r);if(cb)cb();})
   .catch(function(e){pageMsg('Pas de connexion',errMsg(e),true);});}
 function pubRefresh(){if(document.visibilityState==='hidden'||!cart||MODE!=='public')return;
-  if(cart.step==='list'&&cart.ctx==='lv')rpc('shop_public',{p_code:PUBCODE}).then(function(r){if(r&&r.ok){applyPub(r);if(cart&&cart.step==='list')openClient(true);}}).catch(function(){});
+  if(cart.step==='list'&&cart.ctx==='lv'){
+    /* on rafraîchit aussi l'état des réservations du client : « À payer » devient « Confirmée » dès que la boutique a vu le paiement */
+    var pend=(S.live.resa||[]).filter(function(x){return x.statut==='attente'||x.statut==='liste';}).slice(0,5),before={};
+    pend.forEach(function(x){before[x.id]=x.statut;});
+    Promise.all([rpc('shop_public',{p_code:PUBCODE}).then(function(r){if(r&&r.ok)applyPub(r);}).catch(function(){})].concat(pend.map(function(x){return resaEtat(x.id);})))
+      .then(function(){if(!cart||cart.step!=='list')return;openClient(true);
+        pend.forEach(function(x){var n=resaById(x.id);if(!n||n.statut===before[x.id])return;
+          if(n.statut==='payee')toast('Réservation confirmée : '+rTxt(n));
+          else if(n.statut==='attente'&&before[x.id]==='liste')toast('C\'est votre tour : payez l\'acompte pour garder '+rTxt(n));});});}
   else if(cart.step==='done'&&cart.ctx==='lv'&&cart.rid)resaEtat(cart.rid).then(function(){if(cart&&cart.step==='done')openClient(true);});}
 function resaKey(){return 'teranga-shop-resas-'+PUBCODE;}
 function myResas(){try{return JSON.parse(lsGet(resaKey())||'[]');}catch(e){return [];}}
