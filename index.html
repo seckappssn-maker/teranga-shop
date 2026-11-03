@@ -315,6 +315,9 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .go-shop{display:flex;align-items:center;justify-content:center;gap:8px}
 .go-shop svg{width:18px;height:18px;flex:none}
 .brand.to-shop{cursor:pointer}
+.r-list li.minus b,.kv.minus b{color:var(--ok)}
+.r-list li.tot{border-top:1px solid var(--line);padding-top:6px;font-weight:800}
+.bigsum .dette{display:block;margin-top:6px;opacity:.95}
 .paychk{display:flex;flex-direction:column;gap:6px;background:var(--info-soft);border-radius:var(--r);padding:12px 14px}
 .paychk>b{color:var(--info);font-size:15px}
 .paychk .btn-row{margin-top:4px}
@@ -676,7 +679,16 @@ function pendingAlerts(p){return (p.alertes||[]).filter(function(x){return !x.ok
 function alertMsg(p,x){return 'Bonjour '+(x.nom||'').split(' ')[0]+' 👋\nBonne nouvelle : « '+p.nom+' » est de retour chez '+(S.shop.nom||'nous')+' ('+F(p.vente)+').\nCommandez ici : https://'+vitrineLink()+'\nLes quantités sont limitées.';}
 function stLabel(o){if(o.mode==='retrait'){if(o.statut==='prete')return 'À récupérer';if(o.statut==='livree')return 'Récupérée';if(o.statut==='retour')return 'Pas venu';}return ST[o.statut][0];}
 function modeChips(cur,act){return S.shop.retrait?'<div class="fld"><span>Réception</span><div class="chips"><button class="chip" data-act="'+act+'" data-v="livraison" aria-pressed="'+(cur!=='retrait')+'">Livraison</button><button class="chip" data-act="'+act+'" data-v="retrait" aria-pressed="'+(cur==='retrait')+'">Je passe récupérer</button></div>'+(cur==='retrait'?'<small class="hint">Retrait : '+esc(S.shop.adresse||'à la boutique')+'</small>':'')+'</div>':'';}
-function riderOwed(id){return S.commandes.filter(function(o){return o.livreurId===id&&owes(o);}).reduce(function(a,o){return a+aRemettre(o);},0);}
+/* Livraison due par la boutique : le client a tout payé à la boutique (Wave, OM…), la livraison du livreur est chez la boutique */
+var FEE_START=1793721600000;
+function collected(o){return o.payeVia==='direct'?0:aEncaisser(o);}
+function feeDue(o){if(o.mode==='retrait'||o.statut!=='livree'||!o.livreurId||o.fraisRegle)return 0;if(((o.hist&&o.hist.livree)||0)<FEE_START)return 0;return Math.max(0,(o.frais||0)-collected(o));}
+function byShop(o){return !!(o.remise&&o.remise.by==='shop');}
+function riderBal(id){var cash=S.commandes.filter(function(o){return o.livreurId===id&&owes(o);}),fees=S.commandes.filter(function(o){return o.livreurId===id&&feeDue(o)>0;});
+  var A=cash.reduce(function(a,o){return a+aRemettre(o);},0),B=fees.reduce(function(a,o){return a+feeDue(o);},0);
+  return {cash:cash,fees:fees,A:A,B:B,net:A-B,all:cash.concat(fees.filter(function(o){return cash.indexOf(o)<0;}))};}
+function riderOwed(id){var b=riderBal(id);return Math.max(0,b.net);}
+function riderOwedOld(id){return S.commandes.filter(function(o){return o.livreurId===id&&owes(o);}).reduce(function(a,o){return a+aRemettre(o);},0);}
 function normTel(s){var d=String(s||'').replace(/\D/g,'');if(d.indexOf('00221')===0)d=d.slice(5);else if(d.indexOf('221')===0&&d.length===12)d=d.slice(3);return d;}
 function fmtTel(d){d=normTel(d);return d.length===9?d.replace(/(\d{2})(\d{3})(\d{2})(\d{2})/,'$1 $2 $3 $4'):d;}
 function wa(tel,text){var d=normTel(tel);if(d.length===9)d='221'+d;return 'https://wa.me/'+d+(text?'?text='+encodeURIComponent(text):'');}
@@ -706,7 +718,8 @@ function partsOf(o){return o.parts||[];}
 function deN(n){return (/^[aeiouyhâéèêîïôûAEIOUYHÂÉÈÊÎÏÔÛ]/.test(n)?'d\'':'de ')+n;}
 function addTrace(o,txt){o.trace=o.trace||[];o.trace.push({t:Date.now(),txt:txt});}
 function prenom(l){return l?l.nom.split(' ')[0]:'';}
-function declared(id){return S.commandes.filter(function(o){return o.livreurId===id&&owes(o)&&o.remise;});}
+function declared(id){return riderBal(id).all.filter(function(o){return o.remise&&!byShop(o);});}
+function shopDeclared(id){return riderBal(id).all.filter(byShop);}
 function newCode(){var c,n=MODE==='owner'?6:4;do{c=String(Math.pow(10,n-1)+Math.floor(Math.random()*9*Math.pow(10,n-1)));}while(S.livreurs.some(function(l){return l.code===c;}));return c;}
 function livLink(){return SITE+'?b='+shopCode()+'&livreur';}
 function payShort(o){if(o.payeVia==='direct')return 'Payé à la boutique';if(o.payeVia)return o.payeVia==='especes'?'Payé en espèces':'Payé '+PMS[o.payeVia];if(o.pay==='acompte'&&o.acompte>=total(o))return 'Payé '+(PMS[o.acompteVia]||'');if(o.pay==='acompte')return 'Acompte '+F(o.acompte);if(o.pay==='livraison'&&PM[o.payChoix])return PMS[o.payChoix]+' à vérifier';if(PMS[o.pay])return 'Payé '+PMS[o.pay];return o.mode==='retrait'?'Sur place':'À la livraison';}
@@ -742,7 +755,7 @@ function homeHTML(){
   S.commandes.filter(waitPay).forEach(function(o){todo.push(['open-order',o.id,'warn','Vérifiez le paiement '+PM[o.payChoix]+' de '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+F(total(o))+' · regardez vos notifications '+PMS[o.payChoix]]);});
   nouv.forEach(function(o){todo.push(['open-order',o.id,'info','Confirmer la commande de '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+SRC[o.src]+' · '+F(total(o))]);});
   conf.filter(function(o){return !o.livreurId&&o.mode!=='retrait';}).forEach(function(o){todo.push(['open-order',o.id,'sun','Choisir un livreur pour '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+(o.client.quartier||'adresse à préciser')]);});
-  S.livreurs.forEach(function(l){var s=riderOwed(l.id),dc=declared(l.id);if(dc.length){var ds=dc.reduce(function(a,o){return a+aRemettre(o);},0);todo.unshift(['tab','riders','warn',prenom(l)+' dit avoir envoyé '+F(ds)+' par '+(PM[dc[0].remise.via]||'espèces'),'Vérifiez et confirmez la réception']);}else if(s>0)todo.push(['tab','riders','warn',l.nom+' doit vous remettre '+F(s),'Argent des colis déjà livrés']);});
+  S.livreurs.forEach(function(l){var bl=riderBal(l.id),dc=declared(l.id);if(dc.length&&bl.net>0){todo.unshift(['tab','riders','warn',prenom(l)+' dit avoir envoyé '+F(bl.net)+' par '+(PM[dc[0].remise.via]||'espèces'),'Vérifiez et confirmez la réception']);}else if(bl.net>0)todo.push(['tab','riders','warn',l.nom+' doit vous remettre '+F(bl.net),'Argent des colis déjà livrés'+(bl.B?', ses livraisons déjà déduites':'')]);else if(bl.net<0&&!shopDeclared(l.id).length)todo.push(['tab','riders','sun','Vous devez '+F(-bl.net)+' à '+prenom(l),'Ses livraisons payées par le client à la boutique']);});
   S.commandes.filter(function(o){return o.transfert;}).forEach(function(o){var a=rider(o.transfert.de),b2=rider(o.transfert.vers);todo.push(['open-order',o.id,'info',prenom(a)+' passe le colis #'+o.num+' à '+prenom(b2),'En attente que '+prenom(b2)+' accepte']);});
   var pend=S.live.resa.filter(function(r){return r.statut==='attente';}).length;if(pend)todo.unshift(['tab','live','sun',plural(pend,'réservation','réservations')+' du live à vérifier','Regardez qui a payé l\'acompte']);
   S.produits.forEach(function(p){var n=pendingAlerts(p).length;if(n&&p.stock>0)todo.unshift(['prod-edit',p.id,'info','Prévenir '+plural(n,'client','clients')+' : '+p.nom+' est de retour','Ils attendaient l\'arrivage']);});
@@ -873,19 +886,21 @@ function productsHTML(){
 }
 
 function ridersHTML(){
-  var tot=S.livreurs.reduce(function(a,l){return a+riderOwed(l.id);},0);
+  var tot=S.livreurs.reduce(function(a,l){return a+riderOwed(l.id);},0), dette=S.livreurs.reduce(function(a,l){return a+Math.max(0,-riderBal(l.id).net);},0);
   return '<div><p class="eyebrow">Tiak-tiak</p><h1>Vos livreurs</h1></div>'+
-  '<div class="bigsum"><small>Argent chez les livreurs</small><span class="v">'+F(tot)+'</span><small>Colis déjà livrés dont l\'argent ne vous a pas encore été remis. Les frais de livraison restent au livreur.</small></div>'+
+  '<div class="bigsum"><small>Argent chez les livreurs</small><span class="v">'+F(tot)+'</span><small>Colis déjà livrés dont l\'argent ne vous a pas encore été remis. Les frais de livraison restent au livreur.</small>'+(dette?'<small class="dette">Vous devez aussi <b>'+F(dette)+'</b> de livraisons à vos livreurs (clients qui ont tout payé à la boutique).</small>':'')+'</div>'+
   S.livreurs.map(function(l){
-    var owe=S.commandes.filter(function(o){return o.livreurId===l.id&&owes(o);});
-    var sum=owe.reduce(function(a,o){return a+aRemettre(o);},0);
+    var bl=riderBal(l.id), owe=bl.cash, sum=bl.A, net=bl.net, sd=shopDeclared(l.id);
     var route=S.commandes.filter(function(o){return o.livreurId===l.id&&o.statut==='en_route';}).length;
-    var dc=declared(l.id), dsum=dc.reduce(function(a,o){return a+aRemettre(o);},0);
+    var dc=declared(l.id);
     return '<article class="rider"><div class="r-top"><span class="av">'+esc(iniP(l.nom))+'</span><span class="tx"><b>'+esc(l.nom)+'</b><small>'+esc(l.zone)+' · '+fmtTel(l.tel)+'</small></span><button class="icon-btn" data-act="rider-edit" data-id="'+l.id+'" aria-label="Modifier '+esc(l.nom)+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button></div>'+
-    '<div class="r-stats"><div><span>En route</span><b>'+plural(route,'colis','colis')+'</b></div><div class="'+(sum?'owe':'')+'"><span>À vous remettre</span><b>'+F(sum)+'</b></div></div>'+
-    (owe.length?'<ul class="r-list">'+owe.map(function(o){return '<li><span>#'+o.num+' · '+esc(o.client.nom)+'</span><b>'+F(aRemettre(o))+'</b></li>';}).join('')+'</ul>':'')+
-    (dc.length?'<div class="kv hl"><span>'+esc(prenom(l))+' dit avoir envoyé '+F(dsum)+' par '+(PM[dc[0].remise.via]||'espèces')+'</span></div><p class="hint">Vérifiez sur votre téléphone, puis confirmez.</p>':'')+
-    '<div class="btn-row">'+(sum?'<button class="btn sm ok" data-act="rider-paid" data-id="'+l.id+'">'+(dc.length?'Confirmer : reçu ':'Il m\'a remis ')+F(sum)+'</button>':'')+'<a class="btn sm ghost" href="'+wa(l.tel,'')+'" target="_blank" rel="noopener">WhatsApp</a></div>'+
+    '<div class="r-stats"><div><span>En route</span><b>'+plural(route,'colis','colis')+'</b></div><div class="'+(net>0?'owe':'')+'"><span>'+(net<0?'Vous lui devez':'À vous remettre')+'</span><b>'+F(Math.abs(net))+'</b></div></div>'+
+    (bl.all.length?'<ul class="r-list">'+owe.map(function(o){return '<li><span>#'+o.num+' · '+esc(o.client.nom)+' · encaissé</span><b>'+F(aRemettre(o))+'</b></li>';}).join('')+
+      bl.fees.map(function(o){return '<li class="minus"><span>#'+o.num+' · '+esc(o.client.nom)+' · payé à la boutique : sa livraison</span><b>− '+F(feeDue(o))+'</b></li>';}).join('')+
+      (owe.length&&bl.fees.length?'<li class="tot"><span>'+(net>=0?'Il vous remet':'Vous lui donnez')+'</span><b>'+F(Math.abs(net))+'</b></li>':'')+'</ul>':'')+
+    (sd.length?'<div class="kv hl"><span>Vous avez noté : '+F(-net)+' payés à '+esc(prenom(l))+'</span></div><p class="hint">'+esc(prenom(l))+' doit confirmer dans son espace qu\'il a bien reçu l\'argent.</p>':'')+
+    (dc.length&&net>0?'<div class="kv hl"><span>'+esc(prenom(l))+' dit avoir envoyé '+F(net)+' par '+(PM[dc[0].remise.via]||'espèces')+'</span></div><p class="hint">Vérifiez sur votre téléphone, puis confirmez.</p>':'')+
+    '<div class="btn-row">'+(net>0?'<button class="btn sm ok" data-act="rider-paid" data-id="'+l.id+'">'+(dc.length?'Confirmer : reçu ':'Il m\'a remis ')+F(net)+'</button>':net<0&&!sd.length?'<button class="btn sm ok" data-act="rider-pay" data-id="'+l.id+'">J\'ai payé '+F(-net)+' à '+esc(prenom(l))+'</button>':bl.all.length&&!net&&!sd.length?'<button class="btn sm ok" data-act="rider-paid" data-id="'+l.id+'">Comptes à zéro : tout réglé</button>':'')+'<a class="btn sm ghost" href="'+wa(l.tel,'')+'" target="_blank" rel="noopener">WhatsApp</a></div>'+
     (l.acces?'<div class="acc"><span><b>Espace livreur activé</b> · code <b class="sel">'+esc(l.code)+'</b></span><div class="btn-row"><button class="btn sm soft" data-act="lv-as" data-id="'+l.id+'">Voir comme '+esc(prenom(l))+'</button><a class="btn sm ghost" href="'+wa(l.tel,codeMsg(l))+'" target="_blank" rel="noopener">Envoyer son code</a></div></div>':
      '<div class="acc"><span class="muted">Pas d\'espace livreur : il reçoit les fiches sur WhatsApp et vous marquez les étapes.</span><button class="linkbtn" data-act="rider-edit" data-id="'+l.id+'">Lui donner un accès</button></div>')+'</article>';
   }).join('')+
@@ -916,7 +931,7 @@ function actionsHTML(o){
       if(r&&r.acces)ax=livAccess(o)?'<p class="hint">'+esc(prenom(r))+' voit les données du client jusqu\'à '+finTxt(accesFin(o))+' au plus tard. Dès que la commande est livrée ou en retour, il ne voit plus rien, même si c\'est vous qui touchez le bouton.</p>':
         '<p class="hint"><b>'+esc(prenom(r))+' ne voit plus les données du client</b> : plus de '+ACCES_H+' h depuis le retrait.</p><button class="btn sm ghost" data-act="o-acces" data-id="'+o.id+'">Lui redonner l\'accès '+ACCES_H+' h</button>';
       return '<div class="btn-row"><button class="btn ok" data-act="o-done" data-id="'+o.id+'">Livrée</button><button class="btn ghost" data-act="o-return" data-id="'+o.id+'">Retour</button></div><p class="hint">« Retour » si le client est absent ou refuse le colis : l\'article revient dans le stock.</p>'+ax;
-    case 'livree':var m=aRemettre(o);if(m>0&&!o.verse)return '<div class="kv hl"><span>'+esc(r?r.nom:'Le livreur')+' doit vous remettre</span><b>'+F(m)+'</b></div><button class="btn block ok" data-act="o-cash" data-id="'+o.id+'">J\'ai reçu '+F(m)+'</button>';return '<p class="done">Commande terminée'+(m>0?', argent reçu':'')+'.</p>';
+    case 'livree':var m=aRemettre(o),fd=feeDue(o);if(fd>0)return '<div class="kv hl"><span>Vous devez la livraison à '+esc(r?prenom(r):'votre livreur')+'</span><b>'+F(fd)+'</b></div><p class="hint">Le client a tout payé à la boutique. Réglez-la dans l\'onglet Livreurs : elle est déduite de ce que le livreur vous remet.</p>';if(m>0&&!o.verse)return '<div class="kv hl"><span>'+esc(r?r.nom:'Le livreur')+' doit vous remettre</span><b>'+F(m)+'</b></div><button class="btn block ok" data-act="o-cash" data-id="'+o.id+'">J\'ai reçu '+F(m)+'</button>';return '<p class="done">Commande terminée'+(m>0?', argent reçu':'')+'.</p>';
     case 'retour':return '<p class="hint">L\'article est revenu dans le stock.</p><button class="btn block ghost" data-act="o-retry" data-id="'+o.id+'">Relancer la livraison</button>';
   }
   return '';
@@ -1240,8 +1255,8 @@ function openLivreur(keep){
   var incoming=C.filter(function(o){return o.transfert&&o.transfert.vers===me.id;});
   var pick=C.filter(function(o){return mine(o)&&o.statut==='prete';});
   var route=C.filter(function(o){return mine(o)&&o.statut==='en_route';});
-  var owed=C.filter(function(o){return o.livreurId===me.id&&owes(o);}), undecl=owed.filter(function(o){return !o.remise;});
-  var owedSum=owed.reduce(function(a,o){return a+aRemettre(o);},0), undeclSum=undecl.reduce(function(a,o){return a+aRemettre(o);},0);
+  var BL=riderBal(me.id), owed=BL.cash, fees=BL.fees, net=BL.net, undecl=BL.all.filter(function(o){return !o.remise;}), fromShop=BL.all.filter(byShop);
+  var owedSum=Math.max(0,net), undeclSum=net;
   var encaisser=route.reduce(function(a,o){return a+aEncaisser(o);},0);
   var others=S.livreurs.filter(function(l){return l.id!==me.id;});
   function head(o){var e=aEncaisser(o);
@@ -1260,7 +1275,7 @@ function openLivreur(keep){
         '<p class="hint">'+(pm==='nous'?'L\'app ne compte rien : vous réglez ça entre vous.':'Celui qui livre encaisse la livraison et vous donne votre part. Il voit ce partage avant d\'accepter le colis.')+'</p>':'')+
       '<button class="btn sm block" data-act="lv-pass-to" data-id="'+o.id+'"'+(to?'':' disabled')+'>'+(to?'Passer le colis à '+esc(prenom(to)):'Choisissez un livreur')+'</button><button class="linkbtn" data-act="lv-back">Annuler</button>';}
   var html=shHead('Espace livreur · '+sh,esc(me.nom))+
-    '<div class="live-stats"><span><b>'+route.length+'</b> en route</span><span><b>'+F(encaisser)+'</b> à encaisser</span><span><b>'+F(owedSum)+'</b> à remettre</span></div>';
+    '<div class="live-stats"><span><b>'+route.length+'</b> en route</span><span><b>'+F(encaisser)+'</b> à encaisser</span>'+(net<0?'<span><b>'+F(-net)+'</b> à recevoir</span>':'<span><b>'+F(owedSum)+'</b> à remettre</span>')+'</div>';
   if(incoming.length)html+='<section class="blk"><h3>Colis qu\'on vous passe · '+incoming.length+'</h3>'+incoming.map(function(o){return '<article class="resa">'+head(o)+'<p class="resa-l"><b>'+esc(prenom(rider(o.transfert.de)))+'</b> vous passe ce colis. Acceptez seulement quand vous l\'avez en main.</p>'+partTxt(o,o.transfert)+'<div class="btn-row"><button class="btn sm ok" data-act="lv-accept" data-id="'+o.id+'">J\'ai le colis en main</button><button class="btn sm ghost" data-act="lv-refuse" data-id="'+o.id+'">Refuser</button></div></article>';}).join('')+'</section>';
   html+='<section class="blk"><h3>À récupérer à la boutique · '+pick.length+'</h3>'+(pick.length?pick.map(function(o){return '<article class="resa">'+head(o)+'<button class="btn sm block" data-act="lv-pick" data-id="'+o.id+'">J\'ai récupéré le colis</button></article>';}).join(''):'<p class="empty">Rien à récupérer.</p>')+'</section>';
   html+='<section class="blk"><h3>En route · '+route.length+'</h3>'+(route.length?route.map(function(o){
@@ -1272,8 +1287,13 @@ function openLivreur(keep){
     else body=giveNote(o)+contact(o)+'<div class="btn-row"><button class="btn sm ok" data-act="lv-done" data-id="'+o.id+'">Livré</button><button class="btn sm ghost" data-act="lv-absent" data-id="'+o.id+'">Client absent / retour</button></div>'+(others.length?'<button class="linkbtn" data-act="lv-pass" data-id="'+o.id+'">Passer à un autre livreur</button>':'');
     return '<article class="resa">'+head(o)+body+'</article>';
   }).join(''):'<p class="empty">Aucun colis en route.</p>')+'</section>';
-  html+='<section class="blk"><h3>Argent à remettre à la boutique</h3>'+(owed.length?'<div class="sum">'+owed.map(function(o){return '<div class="kv"><span>Colis #'+o.num+(o.hist&&o.hist.livree?' · livré '+when(o.hist.livree).toLowerCase():'')+(o.remise?' · <em class="ok-t">envoyé ('+(PM[o.remise.via]||'en main propre')+')</em>':'')+'</span><b>'+F(aRemettre(o))+'</b></div>';}).join('')+'<div class="kv total"><span>Total</span><b>'+F(owedSum)+'</b></div></div>'+
-    (undecl.length?(liv.pay?'<p class="resa-l">Comment avez-vous remis '+F(undeclSum)+' ?</p><div class="btn-row">'+methods().concat(['especes']).map(function(k){return '<button class="btn sm ok" data-act="lv-remit" data-v="'+k+'">'+(k==='especes'?'En main propre':PM[k])+'</button>';}).join('')+'</div><button class="linkbtn" data-act="lv-back">Annuler</button>':'<button class="btn block" data-act="lv-remit-ask">J\'ai remis '+F(undeclSum)+' à la boutique</button>'):'<p class="hint">Envoi déclaré. La boutique doit confirmer qu\'elle a bien reçu l\'argent.</p>'):'<p class="empty">Rien à remettre. Tout est en règle.</p>')+'</section>';
+  html+='<section class="blk"><h3>Vos comptes avec la boutique</h3>'+(BL.all.length?'<div class="sum">'+owed.map(function(o){return '<div class="kv"><span>Colis #'+o.num+(o.hist&&o.hist.livree?' · livré '+when(o.hist.livree).toLowerCase():'')+' · encaissé'+(o.remise&&!byShop(o)?' · <em class="ok-t">envoyé ('+(PM[o.remise.via]||'en main propre')+')</em>':'')+'</span><b>'+F(aRemettre(o))+'</b></div>';}).join('')+
+      fees.map(function(o){return '<div class="kv minus"><span>Colis #'+o.num+' · payé à la boutique : votre livraison</span><b>− '+F(feeDue(o))+'</b></div>';}).join('')+
+      '<div class="kv total"><span>'+(net>0?'Vous donnez à la boutique':net<0?'La boutique vous donne':'Rien à donner : c\'est équilibré')+'</span><b>'+F(Math.abs(net))+'</b></div></div>'+
+    (fromShop.length?'<div class="kv hl"><span>La boutique dit vous avoir payé '+F(-net)+'</span></div><button class="btn block ok" data-act="lv-recu">J\'ai reçu '+F(-net)+'</button><p class="hint">Confirmez seulement quand vous avez l\'argent en main ou sur votre téléphone.</p>':
+     net<0?'<p class="hint">Vos clients ont payé ces colis directement à la boutique : elle vous doit vos livraisons. Quand elle vous paie, elle le note et vous confirmez ici.</p>':
+     net===0?'<p class="hint">Ce que vous avez encaissé couvre exactement vos livraisons. La boutique remet les comptes à zéro.</p>':
+    (undecl.length?(liv.pay?'<p class="resa-l">Comment avez-vous remis '+F(undeclSum)+' ?</p><div class="btn-row">'+methods().concat(['especes']).map(function(k){return '<button class="btn sm ok" data-act="lv-remit" data-v="'+k+'">'+(k==='especes'?'En main propre':PM[k])+'</button>';}).join('')+'</div><button class="linkbtn" data-act="lv-back">Annuler</button>':'<button class="btn block" data-act="lv-remit-ask">J\'ai remis '+F(undeclSum)+' à la boutique</button>')+(fees.length?'<p class="hint">Vos livraisons payées à la boutique sont déjà déduites.</p>':''):'<p class="hint">Envoi déclaré. La boutique doit confirmer qu\'elle a bien reçu l\'argent.</p>')):'<p class="empty">Rien à remettre. Tout est en règle.</p>')+'</section>';
   var pRows=[];
   C.forEach(function(o){if(o.statut==='retour')return;partsOf(o).forEach(function(p,i){if(p.ok||!p.m)return;
     var done=o.statut==='livree';
@@ -1770,6 +1790,7 @@ function handleLiv(a,b,id){var o;
     case 'lv-refuse':livAct('refuser',id,{},'Colis refusé');return true;
     case 'lv-part-ok':b.disabled=true;livAct('part_recue',id,{i:+b.dataset.v},'Part reçue, c\'est noté');return true;
     case 'lv-remit':b.disabled=true;livAct('remis','',{via:b.dataset.v},'Envoi déclaré à la boutique');return true;
+    case 'lv-recu':b.disabled=true;livAct('recu','',{},'Merci : c\'est noté');return true;
   }
   return false;}
 
@@ -2071,10 +2092,17 @@ document.addEventListener('click',function(e){
       addTrace(o,prenom(to2)+' a reçu le colis '+deN(prenom(fr2))+(pt?' · '+prenom(fr2)+' recevra '+F(pt)+' à la livraison':''));save();render();openLivreur(true);toast('Colis accepté');break;}
     case 'lv-refuse':{o=byId(id);if(!o.transfert)break;addTrace(o,prenom(rider(liv.id))+' a refusé le colis');o.transfert=null;save();render();openLivreur(true);break;}
     case 'lv-remit-ask':liv.pay=true;openLivreur(true);break;
-    case 'lv-remit':{var me3=rider(liv.id),lst2=S.commandes.filter(function(x){return x.livreurId===me3.id&&owes(x)&&!x.remise;}),sm=lst2.reduce(function(a2,x){return a2+aRemettre(x);},0);
-      lst2.forEach(function(x){x.remise={via:b.dataset.v,t:Date.now()};addTrace(x,prenom(me3)+' dit avoir envoyé l\'argent ('+(PM[b.dataset.v]||'en main propre')+')');});
+    case 'lv-recu':{var me4=rider(liv.id),b4=riderBal(me4.id);b4.all.filter(byShop).forEach(function(x){if(owes(x))x.verse=true;if(feeDue(x)>0)x.fraisRegle=true;x.remise=null;addTrace(x,prenom(me4)+' a reçu l\'argent de la boutique');});save();render();openLivreur(true);toast('Merci : c\'est noté');break;}
+    case 'lv-remit':{var me3=rider(liv.id),b3=riderBal(me3.id),lst2=b3.all.filter(function(x){return !x.remise;}),sm=b3.net;
+      lst2.forEach(function(x){x.remise={via:b.dataset.v,t:Date.now(),by:'liv'};addTrace(x,owes(x)?prenom(me3)+' dit avoir envoyé l\'argent ('+(PM[b.dataset.v]||'en main propre')+')':prenom(me3)+' a déduit sa livraison ('+F(feeDue(x))+')');});
       liv.pay=false;save();render();openLivreur(true);toast('Envoi de '+F(sm)+' déclaré à la boutique');break;}
-    case 'rider-paid':{var tot=riderOwed(id);S.commandes.forEach(function(x){if(x.livreurId===id&&owes(x)){x.verse=true;x.remise=null;addTrace(x,'Argent reçu par la boutique');}});save();render();toast(F(tot)+' reçus de '+rider(id).nom);break;}
+    case 'rider-paid':{var bp=riderBal(id);bp.cash.forEach(function(x){x.verse=true;x.remise=null;addTrace(x,'Argent reçu par la boutique');});
+      bp.fees.forEach(function(x){x.fraisRegle=true;x.remise=null;addTrace(x,'Livraison du livreur réglée ('+F(feeDue(x)||x.frais||0)+')');});
+      save();render();toast(bp.net>0?F(bp.net)+' reçus de '+rider(id).nom:'Comptes réglés avec '+rider(id).nom);break;}
+    case 'rider-pay':{var bq=riderBal(id),rl=rider(id);if(bq.net>=0)break;
+      if(!rl.acces){bq.cash.forEach(function(x){x.verse=true;x.remise=null;});bq.fees.forEach(function(x){x.fraisRegle=true;x.remise=null;addTrace(x,'La boutique a payé la livraison à '+prenom(rl));});save();render();toast(F(-bq.net)+' payés à '+rl.nom);break;}
+      bq.all.forEach(function(x){x.remise={via:'especes',t:Date.now(),by:'shop'};addTrace(x,'La boutique dit avoir payé '+F(-bq.net)+' à '+prenom(rl));});
+      save();render();toast('Noté : '+prenom(rl)+' doit confirmer dans son espace');break;}
 
     case 'client-order':closeSheet();newDraft({client:{nom:b.dataset.nom||'',tel:b.dataset.tel||'',quartier:b.dataset.q||''},src:'wa'});break;
     case 's-save':{
