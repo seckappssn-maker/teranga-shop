@@ -285,6 +285,11 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .avis-top small{color:var(--muted);font-size:12.5px}
 .avis p{font-size:14px}
 .avis-ph{width:120px;max-width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+.sv-avis{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:16px 14px 14px}
+.sv-avis b{font-size:16px}
+.sv-avis small{color:var(--muted);font-size:13px;max-width:34ch}
+.sv-avis .btn{margin-top:6px}
+.sv-stars{color:var(--star);font-size:22px;letter-spacing:3px;line-height:1}
 .star-pick{display:flex;gap:6px}
 .star-pick button{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:24px;color:var(--line);padding:0}
 .star-pick button.on{color:var(--star);border-color:var(--star)}
@@ -1223,6 +1228,10 @@ function openSuivi(oid,fromOrder){
     '<div class="sum">'+o.lignes.map(function(l){return '<div class="kv"><span>'+l.qte+' × '+esc(l.nom)+(l.taille?' · '+esc(l.taille):'')+'</span><b>'+F(l.prix*l.qte)+'</b></div>';}).join('')+
     (rt?'':'<div class="kv"><span>Livraison</span><b>'+(o.frais?F(o.frais):'Gratuite')+'</b></div>')+'<div class="kv total"><span>Total</span><b>'+F(total(o))+'</b></div>'+
     (st!=='livree'&&st!=='retour'?'<div class="kv hl"><span>'+(rt?'À payer sur place':'À payer à la livraison')+'</span><b>'+F(due)+'</b></div>':'')+'</div>'+
+    (st==='livree'?(function(){var dj=(S.avis||[]).some(function(x){return x.orderId===o.id;});
+      return '<div class="sv-avis"><span class="sv-stars" aria-hidden="true">★★★★★</span><b>'+(dj?'Merci pour votre avis !':(rt?'Votre achat vous plaît ?':'Votre commande est bien arrivée ?'))+'</b>'+
+        (dj?'':'<small>Donnez votre avis en 1 minute : il aide d\'autres clients à commander en confiance.</small>')+
+        '<button class="btn block" data-act="suivi-avis" data-id="'+o.id+'">'+(dj?'Voir mon avis':'Donner mon avis')+'</button></div>';})():'')+
     '<a class="btn block ghost" href="'+wa(S.shop.tel,'Bonjour, une question sur ma commande n°'+o.num)+'" target="_blank" rel="noopener">Une question ? Écrire à la boutique</a>'+
     '<p class="vt-note">Démo : c\'est ce que voit le client quand il ouvre son lien de suivi. Il se met à jour tout seul quand vous changez l\'étape.</p>'+
     (fromOrder?'<button class="linkbtn" data-act="open-order" data-id="'+o.id+'">← Retour à la commande</button>':''));
@@ -1238,6 +1247,7 @@ function openAvis(keep){
     '<label class="photo-pick" for="av_photo">'+(avf.photo?'<span class="tile lg"><img src="'+avf.photo+'" alt=""></span>':'<span class="tile lg" aria-hidden="true">+</span>')+'<span><b>'+(avf.photo?'Changer la photo':'Ajouter une photo')+'</b><small>Montrez l\'article reçu (facultatif).</small></span><input id="av_photo" type="file" accept="image/*" class="vh"></label>'+
     '<button class="btn block" data-act="av-send">Publier mon avis</button>')+
     '<p class="vt-note">Démo : seul un client qui a reçu sa commande reçoit ce lien. Son avis s\'affiche sur votre boutique en ligne.</p>'+
+    (MODE==='public'&&avf.tk?'<button class="linkbtn" data-act="avis-suivi">← Suivi de ma commande</button>':'')+
     (avf.fromOrder?'<button class="linkbtn" data-act="open-order" data-id="'+o.id+'">← Retour à la commande</button>':''),keep);
 }
 
@@ -1761,6 +1771,8 @@ function handleMode(a,b,id){
     if(a==='c-send'||a==='c-sendwait'){pubSend(a,b);return true;}
     if(a==='c-suivi'){location.search=suiviURL(cart.oid,cart.otk);return true;}
     if(a==='c-resa-suivi'){location.search=suiviURL(b.dataset.id,b.dataset.k);return true;}
+    if(a==='suivi-avis'){var sk=new URLSearchParams(location.search).get('k')||'';location.search='?b='+encodeURIComponent(PUBCODE)+'&a='+encodeURIComponent(id||'')+'&k='+encodeURIComponent(sk);return true;}
+    if(a==='avis-suivi'&&avf){location.search=suiviURL(avf.oid,avf.tk);return true;}
     if(a==='c-sendalert'){if(!cart.nom.trim()||normTel(cart.tel).length<9){toast('Écrivez votre nom et votre numéro WhatsApp');return true;}
       b.disabled=true;rpc('shop_alerte',{p_code:PUBCODE,p_pid:cart.pid,p_nom:cart.nom.trim(),p_tel:normTel(cart.tel)}).then(function(){cart.step='alertdone';saveCart();openClient();},function(e){b.disabled=false;toast(errMsg(e));});return true;}
     if(a==='av-send'){b.disabled=true;rpc('shop_avis_envoyer',{p_code:PUBCODE,p_id:avf.oid,p_tk:avf.tk||'',p_note:avf.note,p_texte:(avf.texte||'').trim(),p_photo:avf.photo||''}).then(function(){avf.sent=true;openAvis();toast('Merci pour votre avis !');},function(e){b.disabled=false;toast(errMsg(e));});return true;}
@@ -1891,7 +1903,7 @@ document.addEventListener('click',function(e){
       break;}
     case 'al-sent':{var pp=prod(id),ix2=+b.dataset.i;if(pp&&pp.alertes[ix2]){pp.alertes[ix2].ok=true;save();render();openProduct(id,true);}break;}
     case 'o-suivi':openSuivi(id,true);break;
-    case 'o-avis':avf={oid:id,note:5,texte:'',photo:'',fromOrder:true};openAvis();break;
+    case 'o-avis':case 'suivi-avis':avf={oid:id,note:5,texte:'',photo:'',fromOrder:true};openAvis();break;
     case 'av-star':avf.note=+b.dataset.v;openAvis(true);break;
     case 'av-send':{
       var od=byId(avf.oid);if(!od)break;
