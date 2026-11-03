@@ -284,7 +284,11 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .avis-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .avis-top small{color:var(--muted);font-size:12.5px}
 .avis p{font-size:14px}
-.avis-ph{width:120px;max-width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+.avis-body{display:flex;align-items:flex-start;gap:12px}
+.avis-body p{flex:1;min-width:0}
+.avis-th{position:relative;flex:none;width:68px;height:68px;padding:0;border:0;border-radius:10px;overflow:hidden;background:var(--surface-2,var(--line));cursor:zoom-in}
+.avis-th img{width:100%;height:100%;object-fit:cover;display:block}
+.avis-th .pic-n{position:absolute;right:4px;bottom:4px;padding:3px 5px;font-size:11px}
 .hero{position:relative;width:100%;max-width:100%;aspect-ratio:16/9;max-height:240px;border-radius:var(--r);overflow:hidden;background:var(--accent)}
 .hero.sm{aspect-ratio:auto;height:132px}
 .hero-c{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -457,6 +461,7 @@ label.prow{cursor:pointer}
 .lb-slide img{margin:auto;max-width:100%;max-height:100%;object-fit:contain;cursor:zoom-in;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 .lb-slide img.z{max-width:none;max-height:none;width:260%;cursor:zoom-out}
 .lb-foot{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 16px 12px;text-align:center}
+.lb-stars{color:#F4C542;letter-spacing:2px}
 .lb-foot b{font-family:var(--f-display);font-size:18px}
 .lb-foot span{font-size:12.5px;opacity:.75}
 
@@ -556,7 +561,7 @@ var SRCK=['tiktok','insta','fb','wa','live','vitrine'];
 var PAY={livraison:'À la livraison',wave:'Payé par Wave',om:'Payé par Orange Money',mixx:'Payé par Mixx by Yas',acompte:'Acompte'};
 var PM={wave:'Wave',om:'Orange Money',mixx:'Mixx by Yas'}, PMS={wave:'Wave',om:'OM',mixx:'Mixx'};
 var QUARTIERS=['Médina','Plateau','Fass','Colobane','HLM','Grand Dakar','Sacré-Cœur','Mermoz','Point E','Fann','Liberté 6','Grand Yoff','Parcelles Assainies','Patte d\'Oie','Ouakam','Ngor','Yoff','Almadies','Pikine','Guédiawaye','Thiaroye','Keur Massar','Rufisque','Diamniadio','Mbao'];
-var S, tab='home', filt='all', q='', draft=null, pdraft=null, rdraft=null, sdraft=null, cart=null, avf=null, liv=null, toastT;
+var AVALL=false, S, tab='home', filt='all', q='', draft=null, pdraft=null, rdraft=null, sdraft=null, cart=null, avf=null, liv=null, toastT;
 var DELAIS=[15,30,60], ACOMPTES=[1000,2000,5000,-1];
 
 /* ---------- Données d'exemple ---------- */
@@ -657,7 +662,7 @@ function avisVis(){return (S.avis||[]).filter(function(a){return a.visible;}).so
 function avisFor(pid){return avisVis().filter(function(a){if(a.pids)return a.pids.indexOf(pid)>=0;var o=byId(a.orderId);return o&&o.lignes.some(function(l){return l.pid===pid;});});}
 function avgNote(list){return list.length?list.reduce(function(s,a){return s+a.note;},0)/list.length:0;}
 function stars(n){var r=Math.round(n);return '<span class="stars" aria-label="'+n.toFixed(1).replace('.',',')+' sur 5">'+'★★★★★'.slice(0,r)+'<i>'+'★★★★★'.slice(r)+'</i></span>';}
-function avisCard(a,seller){return '<article class="avis'+(a.visible?'':' off')+'"><div class="avis-top">'+stars(a.note)+'<small>'+esc(a.nom.split(' ')[0])+' · '+when(a.date)+'</small></div>'+(a.texte?'<p>'+esc(a.texte)+'</p>':'')+(a.photo?'<img class="avis-ph" src="'+a.photo+'" alt="Photo du client">':'')+(seller?'<button class="linkbtn" data-act="av-toggle" data-id="'+a.id+'">'+(a.visible?'Masquer cet avis':'Afficher cet avis')+'</button>':'')+'</article>';}
+function avisCard(a,seller){return '<article class="avis'+(a.visible?'':' off')+'"><div class="avis-top">'+stars(a.note)+'<small>'+esc(a.nom.split(' ')[0])+' · '+when(a.date)+'</small></div>'+((a.texte||a.photo)?'<div class="avis-body">'+(a.texte?'<p>'+esc(a.texte)+'</p>':'')+(a.photo?'<button class="avis-th" data-act="zoom-avis" data-id="'+a.id+'" aria-label="Voir la photo en grand"><img src="'+a.photo+'" alt=""><span class="pic-n"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 8v6M8 11h6"/></svg></span></button>':'')+'</div>':'')+(seller?'<button class="linkbtn" data-act="av-toggle" data-id="'+a.id+'">'+(a.visible?'Masquer cet avis':'Afficher cet avis')+'</button>':'')+'</article>';}
 function pendingAlerts(p){return (p.alertes||[]).filter(function(x){return !x.ok;});}
 function alertMsg(p,x){return 'Bonjour '+(x.nom||'').split(' ')[0]+' 👋\nBonne nouvelle : « '+p.nom+' » est de retour chez '+(S.shop.nom||'nous')+' ('+F(p.vente)+').\nCommandez ici : https://'+vitrineLink()+'\nLes quantités sont limitées.';}
 function stLabel(o){if(o.mode==='retrait'){if(o.statut==='prete')return 'À récupérer';if(o.statut==='livree')return 'Récupérée';if(o.statut==='retour')return 'Pas venu';}return ST[o.statut][0];}
@@ -1187,7 +1192,7 @@ function openClient(keep){
     '<div class="vt-head'+(hr?' slim':'')+'">'+(hr?'':'<span class="mark'+(imgOk(S.shop.logo)?' has-logo':'')+'" aria-hidden="true">'+markHTML()+'</span>')+'<div>'+(hr?'':'<b>'+sh+'</b>')+(av.length?'<span class="avg">'+stars(avg)+' <b>'+avg.toFixed(1).replace('.',',')+'</b> · '+plural(av.length,'avis client','avis clients')+'</span>':'')+'<small>Livraison Dakar et banlieue'+(S.shop.retrait?' ou retrait sur place':'')+(methods().length?' · '+methodsTxt()+' ou à la réception':'')+'</small></div></div>'+
     '<p class="hint">Ajoutez autant d\'articles que vous voulez, puis ouvrez le panier.</p>'+backNote()+myCmdBlock()+
     '<div class="vt-grid">'+vis.map(function(p){var pa=avisFor(p.id);return '<div class="vt-card">'+picBtn(p)+'<div class="in"><b>'+esc(p.nom)+'</b><span class="pr">'+F(p.vente)+'</span>'+(pa.length?'<span class="mini-rate">'+stars(avgNote(pa))+' ('+pa.length+')</span>':'')+(p.stock>0?'<span class="av-ok">Disponible</span>':'<span class="av-pre">Précommande · arrivage '+esc(p.arrivage||'bientôt')+'</span>')+addCtl(p)+(p.stock>0?'':'<button class="linkbtn" data-act="c-alert" data-id="'+p.id+'">Prévenez-moi à l\'arrivage</button>')+'</div></div>';}).join('')+'</div>'+
-    (av.length?'<section class="blk"><h3>Ce que disent les clients</h3>'+av.slice(0,4).map(function(a){return avisCard(a,false);}).join('')+'</section>':'')+
+    (av.length?'<section class="blk"><h3>Ce que disent les clients</h3>'+av.slice(0,AVALL?30:3).map(function(a){return avisCard(a,false);}).join('')+(av.length>3&&!AVALL?'<button class="linkbtn" data-act="c-avall">Voir les '+av.length+' avis →</button>':'')+'</section>':'')+
     '<p class="vt-note">Aperçu : c\'est ce que voient vos clients quand ils ouvrent votre lien.</p>'+cartBar(),keep);
     return;
   }
@@ -1792,11 +1797,13 @@ function shareStory(){try{var f=new File([dataUrlBlob(STORY)],'teranga-shop.jpg'
   toast('Appuyez longuement sur l\'image pour l\'enregistrer');}
 
 /* ---------- Photos en grand (pages clients) : toucher pour zoomer, glisser pour la suivante ---------- */
-function openZoom(pid,i){var p=prod(pid),list=pics(p);if(!list.length)return;
+function openZoom(pid,i){var p=prod(pid),list=pics(p);if(!list.length)return;showZoom(p.nom,list,'<b>'+F(p.vente)+'</b>',i);}
+function openZoomAvis(id){var a=(S.avis||[]).filter(function(x){return x.id===id;})[0];if(!a||!a.photo)return;showZoom('Photo de '+(a.nom||'Client').split(' ')[0],[a.photo],'<b class="lb-stars">'+'★'.repeat(a.note||5)+'</b>',0);}
+function showZoom(title,list,foot,i){
   var el=$('#lb');if(!el){el=document.createElement('div');el.id='lb';el.className='lb';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');document.body.appendChild(el);}
-  el.innerHTML='<div class="lb-top"><b>'+esc(p.nom)+'</b><span class="lb-n"></span><button class="lb-x" data-act="zoom-close" aria-label="Fermer">×</button></div>'+
-    '<div class="lb-track">'+list.map(function(u,k){return '<div class="lb-slide"><img src="'+u+'" alt="'+esc(p.nom)+' · photo '+(k+1)+'" data-act="zoom-tap"></div>';}).join('')+'</div>'+
-    '<div class="lb-foot"><b>'+F(p.vente)+'</b><span>Touchez la photo pour zoomer'+(list.length>1?' · glissez pour voir la suivante':'')+'</span></div>';
+  el.innerHTML='<div class="lb-top"><b>'+esc(title)+'</b><span class="lb-n"></span><button class="lb-x" data-act="zoom-close" aria-label="Fermer">×</button></div>'+
+    '<div class="lb-track">'+list.map(function(u,k){return '<div class="lb-slide"><img src="'+u+'" alt="'+esc(title)+' · photo '+(k+1)+'" data-act="zoom-tap"></div>';}).join('')+'</div>'+
+    '<div class="lb-foot">'+foot+'<span>Touchez la photo pour zoomer'+(list.length>1?' · glissez pour voir la suivante':'')+'</span></div>';
   el.hidden=false;document.body.style.overflow='hidden';
   var tr=el.querySelector('.lb-track');tr.scrollLeft=tr.clientWidth*(i||0);tr.onscroll=updZoom;updZoom();}
 function updZoom(){var el=$('#lb');if(!el||el.hidden)return;var tr=el.querySelector('.lb-track'),n=tr.children.length,i=Math.round(tr.scrollLeft/Math.max(1,tr.clientWidth));el.querySelector('.lb-n').textContent=n>1?(i+1)+' / '+n:'';}
@@ -1810,6 +1817,8 @@ function handleMode(a,b,id){
   switch(a){
     case 'reload':location.reload();return true;
     case 'zoom':openZoom(id,+b.dataset.i||0);return true;
+    case 'zoom-avis':openZoomAvis(id);return true;
+    case 'c-avall':AVALL=true;openClient(true);return true;
     case 'zoom-close':closeZoom();return true;
     case 'ph-del':if(pdraft){pdraft.photos.splice(+b.dataset.i,1);pdraft.photo=pdraft.photos[0]||'';renderProduct(true);}return true;
     case 'ph-main':if(pdraft){var ph=pdraft.photos.splice(+b.dataset.i,1)[0];pdraft.photos.unshift(ph);pdraft.photo=ph;renderProduct(true);}return true;
