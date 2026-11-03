@@ -814,7 +814,7 @@ function productsHTML(){
     return '<button class="prow" data-act="prod-edit" data-id="'+p.id+'">'+tile(p)+'<span class="pmain"><b>'+esc(p.nom)+'</b><small>'+esc(p.cat||'Sans catégorie')+' · achat '+F(p.achat)+(p.tailles?' · '+esc(optNom(p)):'')+'</small><small class="mg">+'+F(p.vente-p.achat)+' par pièce</small></span><span class="pside"><b>'+F(p.vente)+'</b>'+stk+(al?'<span class="pill st-info">'+al+' à prévenir</span>':'')+'</span></button>';
   }).join('')+'</div></section>'+
   '<section class="blk"><div class="row-head"><h3>Avis clients</h3>'+(av.length?'<span class="avg">'+stars(avgNote(av))+' <b>'+avgNote(av).toFixed(1).replace('.',',')+'</b> · '+plural(av.length,'avis','avis')+'</span>':'')+'</div>'+
-  '<p class="hint">Après chaque livraison, le message « Merci » envoie au client un lien pour donner son avis. Seuls les clients qui ont reçu leur commande peuvent noter. Les avis s\'affichent sur votre boutique en ligne.</p>'+
+  '<p class="hint">Quand la commande est livrée, le client peut donner son avis depuis sa page de suivi ou avec le lien du message « Merci + avis ». Seuls les clients qui ont reçu leur commande peuvent noter. Les avis s\'affichent sur votre boutique en ligne.</p>'+
   (all.length?all.slice().sort(function(a,b){return b.date-a.date;}).map(function(a){return avisCard(a,true);}).join(''):'<p class="empty">Pas encore d\'avis.</p>')+'</section>';
 }
 
@@ -888,7 +888,10 @@ function showOrder(id,keep){
   '<div class="blk"><h3>Articles</h3><div class="sum">'+o.lignes.map(function(l){return '<div class="kv"><span>'+l.qte+' × '+esc(l.nom)+(l.taille?' · '+esc(l.taille):'')+'</span><b>'+F(l.prix*l.qte)+'</b></div>';}).join('')+
     (o.mode==='retrait'?'':'<div class="kv"><span>Livraison</span><b>'+(o.frais?F(o.frais):'Gratuite')+'</b></div>')+'<div class="kv total"><span>Total</span><b>'+F(total(o))+'</b></div>'+
     '<div class="kv"><span>Paiement</span><b>'+payTxt+'</b></div>'+
-    '<div class="kv hl"><span>'+(o.mode==='retrait'?'À payer sur place':'Le livreur encaisse'+(paid?' (livraison)':''))+'</span><b>'+F(aEncaisser(o))+'</b></div>'+
+    (o.statut==='retour'?'':o.statut==='livree'?
+      /* commande terminée : l'argent est déjà encaissé, on ne l'affiche plus comme « à payer » */
+      '<div class="kv"><span>'+(o.mode==='retrait'?'Payé sur place':'Encaissé par le livreur'+(paid?' (livraison)':''))+(o.payeVia&&o.payeVia!=='direct'?' · '+(o.payeVia==='especes'?'espèces':PM[o.payeVia]):'')+'</span><b>'+F(aEncaisser(o))+'</b></div>':
+      '<div class="kv hl"><span>'+(o.mode==='retrait'?'À payer sur place':'Le livreur encaisse'+(paid?' (livraison)':''))+'</span><b>'+F(aEncaisser(o))+'</b></div>')+
     '<div class="kv gain"><span>Votre bénéfice</span><b>'+F(benef(o))+'</b></div></div></div>'+
   '<div class="blk">'+riderSel+(o.transfert?'<p class="hint"><b>'+esc(prenom(rider(o.transfert.de)))+'</b> passe ce colis à <b>'+esc(prenom(rider(o.transfert.vers)))+'</b> : en attente de sa confirmation.</p>':'')+actionsHTML(o)+'</div>'+
   (o.trace&&o.trace.length?'<div class="blk"><h3>Historique du colis</h3><ul class="trace">'+o.trace.map(function(x){return '<li><small>'+when(x.t)+'</small><span>'+esc(x.txt)+'</span></li>';}).join('')+'</ul></div>':'')+
