@@ -285,6 +285,25 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .avis-top small{color:var(--muted);font-size:12.5px}
 .avis p{font-size:14px}
 .avis-ph{width:120px;max-width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+.hero{position:relative;width:100%;max-width:100%;aspect-ratio:16/9;max-height:240px;border-radius:var(--r);overflow:hidden;background:var(--accent)}
+.hero.sm{aspect-ratio:auto;height:132px}
+.hero-c{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.7) 100%)}
+.hero-in{position:absolute;left:14px;right:14px;bottom:12px;z-index:1;display:flex;align-items:center;gap:12px;color:#fff;min-width:0}
+.hero-in>div{min-width:0}
+.hero-logo{width:66px;height:66px;border-radius:50%;border:3px solid #fff;object-fit:cover;flex:none;background:#fff}
+.hero.sm .hero-logo{width:52px;height:52px}
+.hero-in b{display:block;font-family:var(--f-display);font-size:22px;line-height:1.15;text-shadow:0 1px 4px rgba(0,0,0,.45);overflow-wrap:anywhere}
+.hero.sm .hero-in b{font-size:18px}
+.hero-in span{font-size:14px;opacity:.92;text-shadow:0 1px 3px rgba(0,0,0,.45)}
+.vt-head.slim{margin-top:-2px}
+.mark.has-logo{background:var(--surface);border-radius:50%;overflow:hidden;border:1px solid var(--line)}
+.mark img{width:100%;height:100%;object-fit:cover;display:block}
+.ip{position:relative;padding-bottom:30px}
+.ip-cover{display:grid;place-items:center;width:100%;aspect-ratio:16/7;border-radius:12px;overflow:hidden;border:1.5px dashed var(--line);background:var(--surface);color:var(--muted);font-weight:700;cursor:pointer}
+.ip-cover img{width:100%;height:100%;object-fit:cover}
+.ip-logo{position:absolute;left:14px;bottom:0;width:72px;height:72px;border-radius:50%;overflow:hidden;display:grid;place-items:center;border:3px solid var(--bg);background:var(--surface-2,var(--surface));box-shadow:0 0 0 1.5px var(--line);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;text-align:center}
+.ip-logo img{width:100%;height:100%;object-fit:cover}
 .paychk{display:flex;flex-direction:column;gap:6px;background:var(--info-soft);border-radius:var(--r);padding:12px 14px}
 .paychk>b{color:var(--info);font-size:15px}
 .paychk .btn-row{margin-top:4px}
@@ -612,6 +631,12 @@ function benef(o){return o.lignes.reduce(function(a,l){return a+(l.prix-(l.achat
 function owes(o){return o.mode!=='retrait'&&o.statut==='livree'&&!o.verse&&aRemettre(o)>0;}
 function methods(){return ['wave','om','mixx'].filter(function(k){return normTel(S.shop[k]).length>=9;});}
 function methodsTxt(){var m=methods().map(function(k){return PM[k];});return m.length<2?(m[0]||''):m.slice(0,-1).join(', ')+' ou '+m[m.length-1];}
+function imgOk(u){return /^(https:\/\/|data:image\/)/.test(u||'');}
+/* Couverture + photo de profil de la boutique (facultatives) : sans image, la page reste comme avant */
+function hero(sub,small){var c=imgOk(S.shop.cover)?S.shop.cover:'',l=imgOk(S.shop.logo)?S.shop.logo:'';if(!c)return '';
+  return '<div class="hero'+(small?' sm':'')+'"><img class="hero-c" src="'+c+'" alt=""><div class="hero-in">'+(l?'<img class="hero-logo" src="'+l+'" alt="">':'')+'<div><b>'+esc(S.shop.nom||'Ma boutique')+'</b>'+(sub?'<span>'+sub+'</span>':'')+'</div></div></div>';}
+function markHTML(){return imgOk(S.shop.logo)?'<img src="'+S.shop.logo+'" alt="">':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';}
+function setMark(){var m=document.querySelector('.top .mark');if(!m)return;var l=MODE!=='demo'&&MODE!=='owner'&&imgOk(S.shop.logo);m.classList.toggle('has-logo',!!l);m.innerHTML=l?'<img src="'+S.shop.logo+'" alt="">':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';}
 function payOk(k){return k==='livraison'||methods().indexOf(k)>=0;}
 function waitPay(o){return !!o&&o.pay==='livraison'&&!!PM[o.payChoix]&&o.statut!=='livree'&&o.statut!=='retour';}
 function payNow(k,amt,num){if(!PM[k]||normTel(S.shop[k]).length<9)return '';return '<div class="card blk"><p>Pour payer, envoyez <b>'+F(amt)+'</b> par '+PM[k]+' :</p><div class="kv"><span>'+PM[k]+'</span><b class="sel">'+fmtTel(S.shop[k])+'</b></div><button class="btn sm ghost" data-act="copy" data-text="'+fmtTel(S.shop[k])+'">Copier le numéro '+PMS[k]+'</button></div>'+
@@ -1042,9 +1067,15 @@ function riderSheet(keep){var l=rdraft.id?rider(rdraft.id):null;
   '<p class="hint">Seulement pour un livreur de confiance. Il voit ses colis (adresse, numéro du client, montant à encaisser) et marque lui-même « récupéré », « livré » ou « retour ». Il ne voit jamais vos prix d\'achat ni vos bénéfices.</p>'+
   (rdraft.acces?'<div class="kv"><span>Son code</span><b class="sel">'+esc(rdraft.code)+'</b></div><button class="linkbtn" data-act="r-newcode">Changer le code</button>':'')+'</div>'+
   '<button class="btn block" data-act="r-save">Enregistrer</button>'+(l?'<button class="linkbtn danger" data-act="r-del">Retirer ce livreur</button>':''),keep);}
-function openShop(){var sp=S.shop;sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),code:ACC&&ACC.code||''};
+function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),code:ACC&&ACC.code||''};
   openSheet('<div class="sh-head"><div><p class="eyebrow">Réglages</p><h2>Ma boutique</h2></div>'+closeBtn+'</div>'+
   '<label class="fld"><span>Nom de la boutique</span><input id="s_nom" data-s="nom" value="'+esc(sdraft.nom)+'"></label>'+
+  '<div class="card blk"><b>Photo de profil et couverture <em>(facultatif)</em></b><p class="hint">Elles s\'affichent en haut de votre boutique en ligne, comme sur TikTok. Sans photo, la page reste simple.</p>'+
+  '<div class="ip"><label class="ip-cover" for="s_cover">'+(imgOk(S.shop.cover)?'<img src="'+S.shop.cover+'" alt="Couverture">':'<span>+ Couverture</span>')+'</label>'+
+  '<label class="ip-logo" for="s_logo">'+(imgOk(S.shop.logo)?'<img src="'+S.shop.logo+'" alt="Photo de profil">':'<span>+ Photo</span>')+'</label></div>'+
+  '<input id="s_cover" type="file" accept="image/*" class="vh"><input id="s_logo" type="file" accept="image/*" class="vh">'+
+  '<small class="hint">Touchez la grande image pour la couverture, le rond pour la photo de profil (votre logo).</small>'+
+  ((S.shop.cover||S.shop.logo)?'<div class="btn-row">'+(S.shop.cover?'<button class="linkbtn danger" data-act="s-img-del" data-v="cover">Retirer la couverture</button>':'')+(S.shop.logo?'<button class="linkbtn danger" data-act="s-img-del" data-v="logo">Retirer la photo</button>':'')+'</div>':'')+'</div>'+
   '<label class="fld"><span>Numéro WhatsApp de la boutique</span><input id="s_tel" data-s="tel" inputmode="tel" value="'+esc(fmtTel(sdraft.tel))+'"></label>'+
   '<div class="card blk"><b>Moyens de paiement</b><p class="hint">Mettez seulement les numéros que vous utilisez. Vos clients voient uniquement ceux qui sont remplis.</p>'+
   '<label class="fld"><span>Numéro Wave</span><input id="s_wave" data-s="wave" inputmode="tel" value="'+esc(fmtTel(sdraft.wave))+'" placeholder="Laisser vide si vous n\'utilisez pas Wave"></label>'+
@@ -1054,7 +1085,7 @@ function openShop(){var sp=S.shop;sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||''
   '<label class="fld"><span>Adresse et horaires du retrait</span><input id="s_adr" data-s="adresse" value="'+esc(sdraft.adresse)+'" placeholder="Ex. : Liberté 6, à côté de la pharmacie, 10h–20h"></label></div>'+
   '<label class="fld"><span>Prix de la livraison habituel</span><input id="s_frais" data-s="frais" inputmode="numeric" value="'+esc(sdraft.frais)+'"><small class="hint">Utilisé pour les commandes de la boutique en ligne et du live. 0 = livraison gratuite.</small></label>'+
   '<button class="btn block" data-act="s-save">Enregistrer</button>'+
-  (MODE==='owner'?ownerCards():'<div class="card blk"><b>Démo</b><p class="hint">Tout ce que vous changez reste seulement sur ce téléphone. Vous pouvez revenir aux exemples du début.</p><button class="btn ghost" data-act="s-reset">Recommencer la démo</button>'+(onSite()?'<button class="btn" data-act="go-welcome">Créer ma vraie boutique</button>':'')+'</div>'));}
+  (MODE==='owner'?ownerCards():'<div class="card blk"><b>Démo</b><p class="hint">Tout ce que vous changez reste seulement sur ce téléphone. Vous pouvez revenir aux exemples du début.</p><button class="btn ghost" data-act="s-reset">Recommencer la démo</button>'+(onSite()?'<button class="btn" data-act="go-welcome">Créer ma vraie boutique</button>':'')+'</div>'),keepD);}
 function openClients(){
   var list=clientList();
   openSheet('<div class="sh-head"><div><p class="eyebrow">Clients</p><h2>'+plural(list.length,'client','clients')+'</h2></div>'+closeBtn+'</div>'+
@@ -1148,8 +1179,9 @@ function openClient(keep){
   }
   if(!lv){
     var vis=S.produits.filter(function(p){return p.visible;}), av=avisVis(), avg=avgNote(av);
-    openSheet(shHead('Vue client','Boutique en ligne')+
-    '<div class="vt-head"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg></span><div><b>'+sh+'</b>'+(av.length?'<span class="avg">'+stars(avg)+' <b>'+avg.toFixed(1).replace('.',',')+'</b> · '+plural(av.length,'avis client','avis clients')+'</span>':'')+'<small>Livraison Dakar et banlieue'+(S.shop.retrait?' ou retrait sur place':'')+(methods().length?' · '+methodsTxt()+' ou à la réception':'')+'</small></div></div>'+
+    var hr=hero('Commandez en ligne');
+    openSheet((hr&&solo()?'':shHead('Vue client','Boutique en ligne'))+hr+
+    '<div class="vt-head'+(hr?' slim':'')+'">'+(hr?'':'<span class="mark'+(imgOk(S.shop.logo)?' has-logo':'')+'" aria-hidden="true">'+markHTML()+'</span>')+'<div>'+(hr?'':'<b>'+sh+'</b>')+(av.length?'<span class="avg">'+stars(avg)+' <b>'+avg.toFixed(1).replace('.',',')+'</b> · '+plural(av.length,'avis client','avis clients')+'</span>':'')+'<small>Livraison Dakar et banlieue'+(S.shop.retrait?' ou retrait sur place':'')+(methods().length?' · '+methodsTxt()+' ou à la réception':'')+'</small></div></div>'+
     '<p class="hint">Ajoutez autant d\'articles que vous voulez, puis ouvrez le panier.</p>'+backNote()+
     '<div class="vt-grid">'+vis.map(function(p){var pa=avisFor(p.id);return '<div class="vt-card">'+picBtn(p)+'<div class="in"><b>'+esc(p.nom)+'</b><span class="pr">'+F(p.vente)+'</span>'+(pa.length?'<span class="mini-rate">'+stars(avgNote(pa))+' ('+pa.length+')</span>':'')+(p.stock>0?'<span class="av-ok">Disponible</span>':'<span class="av-pre">Précommande · arrivage '+esc(p.arrivage||'bientôt')+'</span>')+addCtl(p)+(p.stock>0?'':'<button class="linkbtn" data-act="c-alert" data-id="'+p.id+'">Prévenez-moi à l\'arrivage</button>')+'</div></div>';}).join('')+'</div>'+
     (av.length?'<section class="blk"><h3>Ce que disent les clients</h3>'+av.slice(0,4).map(function(a){return avisCard(a,false);}).join('')+'</section>':'')+
@@ -1158,7 +1190,8 @@ function openClient(keep){
   }
   var items=L.items.map(prod).filter(Boolean), cur=L.current&&L.items.indexOf(L.current)>=0?prod(L.current):null;
   function card(p,big){var a=avail(p.id),ctl=addCtl(p),chips=ctl.indexOf('class="szs"')>=0;return '<div class="lc-card'+(big?' cur':'')+'"><span class="lnum'+(big?' lg':'')+'">'+lnum(p.id)+'</span>'+(pics(p).length?picBtn(p,'sm'):'')+'<span class="t">'+(big?'<em class="now">En ce moment</em>':'')+'<b>'+esc(p.nom)+'</b><small>'+F(p.vente)+' · '+(a>0?'reste '+a:'épuisé')+'</small>'+(chips?ctl:'')+'</span>'+(chips?'':ctl)+'</div>';}
-  openSheet(shHead('Vue client',sh)+
+  var hrl=hero('',true);
+  openSheet((hrl&&solo()?'':shHead('Vue client',sh))+hrl+
   '<p class="badge-live">'+(L.actif?'<i></i>En direct':'Pas de live en ce moment')+'</p>'+
   '<p class="hint">Les commentaires ne comptent pas : réservez ici. Ajoutez tous les articles que vous voulez, puis ouvrez le panier. Pour confirmer, payez l\'acompte de '+acoTxt()+(methods().length?' par '+methodsTxt():'')+' dans les '+(L.delai<60?L.delai+' minutes':'60 minutes')+'.</p>'+backNote()+myResaBlock()+
   (cart.away.length?'<div class="saved-note"><span>'+(function(n){return plural(n,'article','articles')+' de votre panier '+(n>1?'ne sont':'n\'est')+' plus dans ce live.';})(cart.away.reduce(function(a,l){return a+l.qte;},0))+'</span><button class="linkbtn" data-act="c-to-vt">Les retrouver dans la boutique en ligne →</button></div>':'')+
@@ -1431,7 +1464,7 @@ function canon(x){if(x===undefined)return 'null';if(x===null||typeof x!=='object
   if(Array.isArray(x))return '['+x.map(canon).join(',')+']';
   return '{'+Object.keys(x).filter(function(k){return x[k]!==undefined;}).sort().map(function(k){return JSON.stringify(k)+':'+canon(x[k]);}).join(',')+'}';}
 function omit(o,ks){var r={};Object.keys(o||{}).forEach(function(k){if(ks.indexOf(k)<0)r[k]=o[k];});return r;}
-function shape(col,o){if(col==='produits'){var r=omit(o,['stock','alertes','stock0']),ph=pics(o).filter(function(u){return !isData(u);});r.photos=ph;r.photo=ph[0]||'';return r;}return col==='set'&&o&&o.resa?omit(o,['resa']):o;}
+function shape(col,o){if(col==='set'&&o&&(isData(o.logo)||isData(o.cover))){var q=Object.assign({},o);['logo','cover'].forEach(function(k){if(isData(q[k]))q[k]='';});o=q;}if(col==='produits'){var r=omit(o,['stock','alertes','stock0']),ph=pics(o).filter(function(u){return !isData(u);});r.photos=ph;r.photo=ph[0]||'';return r;}return col==='set'&&o&&o.resa?omit(o,['resa']):o;}
 function entities(){var m={};
   m['set|shop']=S.shop;m['set|live']=S.live;
   S.produits.forEach(function(p){m['produits|'+p.id]=p;(p.alertes||[]).forEach(function(a){if(!a.id){a.id='al'+Date.now()+rnd(3);ALERTS[a.id]=a;}a.pid=p.id;m['alertes|'+a.id]=a;});});
@@ -1454,7 +1487,7 @@ function applyRows(rows,full){var n=0,news=[],ents=full?{}:entities();
   rows.forEach(function(r){var key=r.col+'|'+r.id, cur=ents[key];
     if(!LAST||r.updated_at>LAST)LAST=r.updated_at;
     if(r.col==='produits'&&cur&&!r.deleted){var st=Math.max(0,(+r.data.stock||0)+(STOCKQ[r.id]||0));if(cur.stock!==st){cur.stock=st;n++;}}
-    if(cur&&(SNAP[key]===undefined||canon(shape(r.col,cur))!==SNAP[key]||(r.col==='produits'&&pics(cur).some(isData))))return;   // changement local pas encore envoyé : il gagne
+    if(cur&&(SNAP[key]===undefined||canon(shape(r.col,cur))!==SNAP[key]||(r.col==='produits'&&pics(cur).some(isData))||(r.col==='set'&&r.id==='shop'&&(isData(cur.logo)||isData(cur.cover)))))return;   // changement local pas encore envoyé : il gagne
     if(r.deleted){if(cur){removeEnt(r.col,r.id);n++;}delete SNAP[key];return;}
     var cs=canon(shape(r.col,r.data));if(cur&&SNAP[key]===cs)return;
     if(!cur&&LOADED&&r.col==='commandes'&&r.data.statut==='nouvelle')news.push(r.data);
@@ -1486,7 +1519,7 @@ function schedulePush(){clearTimeout(PUSHT);PUSHT=setTimeout(function(){flush().
 function flush(){
   if(MODE!=='owner'||!SB||!LOADED)return Promise.resolve();
   if(FLUSHING){FLUSHAGAIN=true;return FLUSHING;}
-  S.produits.forEach(function(p){if(pics(p).some(isData))uploadPhotos(p.id);});
+  S.produits.forEach(function(p){if(pics(p).some(isData))uploadPhotos(p.id);});uploadShopImgs();
   var ents=entities(), ops=[], snaps={}, incs=[], sent={};
   Object.keys(ents).forEach(function(k){var col=k.split('|')[0], id=k.slice(col.length+1), sh=shape(col,ents[k]), cs=canon(sh);
     if(SNAP[k]===cs)return;
@@ -1509,7 +1542,12 @@ function saveCache(){clearTimeout(CACHET);CACHET=setTimeout(function(){if(MODE==
 function setStock(p,v){v=Math.max(0,Math.round(+v||0));var d=v-(+p.stock||0);p.stock=v;if(d&&MODE==='owner')STOCKQ[p.id]=(STOCKQ[p.id]||0)+d;}
 function newTk(){return rnd(16);}
 function dataUrlBlob(u){var a=u.split(','),m=a[0].match(/:(.*?);/)[1],b=atob(a[1]),n=b.length,x=new Uint8Array(n);while(n--)x[n]=b.charCodeAt(n);return new Blob([x],{type:m});}
-var UPL={};
+var UPL={},UPLS=0;
+function uploadShopImgs(){if(MODE!=='owner'||!USER||!SB||UPLS)return;var ks=['logo','cover'].filter(function(k){return isData(S.shop[k]);});if(!ks.length)return;UPLS=1;
+  ks.reduce(function(pr,k){return pr.then(function(){var src=S.shop[k],path=USER.id+'/'+k+'-'+Date.now()+'.jpg';
+    return SB.storage.from('shop-photos').upload(path,dataUrlBlob(src),{contentType:'image/jpeg',upsert:true}).then(function(r){if(r.error)throw r.error;
+      var url=SB.storage.from('shop-photos').getPublicUrl(path).data.publicUrl;if(S.shop[k]===src)S.shop[k]=url;});});},Promise.resolve())
+  .catch(function(){}).then(function(){UPLS=0;save();});}
 function uploadPhotos(pid){var p=prod(pid);if(MODE!=='owner'||!p||!USER||!SB||UPL[pid])return;var todo=pics(p).filter(isData);if(!todo.length)return;UPL[pid]=1;
   todo.reduce(function(pr,src,i){return pr.then(function(){var path=USER.id+'/'+pid+'-'+Date.now()+'-'+i+'.jpg';
     return SB.storage.from('shop-photos').upload(path,dataUrlBlob(src),{contentType:'image/jpeg',upsert:true}).then(function(r){if(r.error)throw r.error;
@@ -1609,7 +1647,7 @@ function pubClosed(r){pageMsg(r==='inactive'?'Boutique fermée pour le moment':'
 function applyPub(r){SKEW=(r.now||Date.now())-Date.now();var keep=S&&S.live&&S.live.resa||[];
   S={v:9,shop:Object.assign(emptyS().shop,r.shop),produits:(r.produits||[]).map(function(p){var q=Object.assign({achat:0,alertes:[],photo:''},p);q.stock=Math.min(+q.stock||0,+q.avail||0);return q;}),commandes:[],livreurs:[],
      avis:(r.avis||[]).map(function(a){return Object.assign({visible:true,orderId:''},a);}),live:Object.assign(emptyS().live,r.live,{resa:keep})};
-  document.title=S.shop.nom+' · Boutique en ligne';$('#shopName').textContent=S.shop.nom;}
+  document.title=S.shop.nom+' · Boutique en ligne';$('#shopName').textContent=S.shop.nom;setMark();}
 function pubLoad(cb){return rpc('shop_public',{p_code:PUBCODE}).then(function(r){if(!r||!r.ok){pubClosed(r&&r.raison);return;}applyPub(r);if(cb)cb();})
   .catch(function(e){pageMsg('Pas de connexion',errMsg(e),true);});}
 function pubRefresh(){if(document.visibilityState==='hidden'||!cart||MODE!=='public')return;
@@ -1639,11 +1677,11 @@ function suiviURL(id,tk){return '?b='+encodeURIComponent(PUBCODE)+'&s='+encodeUR
 function pubSuivi(id,tk,silent){rpc('shop_suivi',{p_code:PUBCODE,p_id:id,p_tk:tk||''}).then(function(r){
     if(!r||!r.ok){if(!silent)pageMsg('Lien introuvable','Ce lien de suivi n\'est plus valable. Écrivez à la boutique sur WhatsApp.',false);return;}
     S=emptyS();S.shop=Object.assign(S.shop,r.shop);var o=r.o;o.client=Object.assign({tel:'',quartier:''},o.client);o.hist=o.hist||{};
-    S.commandes=[o];S.livreurs=r.livreur?[r.livreur]:[];$('#shopName').textContent=S.shop.nom;document.title='Commande n°'+o.num+' · '+S.shop.nom;openSuivi(o.id,false);})
+    S.commandes=[o];S.livreurs=r.livreur?[r.livreur]:[];$('#shopName').textContent=S.shop.nom;setMark();document.title='Commande n°'+o.num+' · '+S.shop.nom;openSuivi(o.id,false);})
   .catch(function(e){if(!silent)pageMsg('Pas de connexion',errMsg(e),true);});}
 function pubAvis(id,tk){rpc('shop_avis_info',{p_code:PUBCODE,p_id:id,p_tk:tk||''}).then(function(r){
     if(!r||!r.ok){pageMsg('Lien introuvable','Ce lien n\'est plus valable.',false);return;}
-    S=emptyS();S.shop.nom=r.shop.nom;var o=r.o;o.client=Object.assign({tel:'',quartier:''},o.client);S.commandes=[o];$('#shopName').textContent=S.shop.nom;
+    S=emptyS();S.shop.nom=r.shop.nom;S.shop.logo=r.shop.logo||'';var o=r.o;o.client=Object.assign({tel:'',quartier:''},o.client);S.commandes=[o];$('#shopName').textContent=S.shop.nom;setMark();
     if(o.statut!=='livree'&&!r.deja){pageMsg('Merci !','Vous pourrez donner votre avis quand vous aurez reçu votre commande n°'+o.num+'.',false);return;}
     avf={oid:o.id,tk:tk,note:5,texte:'',photo:'',sent:!!r.deja};openAvis();})
   .catch(function(e){pageMsg('Pas de connexion',errMsg(e),true);});}
@@ -1893,6 +1931,7 @@ document.addEventListener('click',function(e){
     case 'c-back':cart.step='list';openClient();break;
     case 'c-mode':cart.mode=b.dataset.v;saveCart();openClient(true);break;
     case 'c-pay':cart.pay=b.dataset.v;saveCart();openClient(true);break;
+    case 's-img-del':S.shop[b.dataset.v]='';save();openShop(true);toast(b.dataset.v==='cover'?'Couverture retirée':'Photo retirée');break;
     case 'o-paid':o=byId(id);if(!o||!PM[o.payChoix])break;o.pay='acompte';o.acompte=total(o);o.acompteVia=o.payChoix;save();render();showOrder(id,true);toast('Paiement '+PM[o.acompteVia]+' noté : tout est payé');break;
     case 'o-paylater':o=byId(id);if(!o)break;o.payChoix='';save();render();showOrder(id,true);toast(o.mode==='retrait'?'Le client paiera sur place':'Le client paiera à la livraison');break;
     case 'c-to-vt':{var vs=loadCart('vt')||{lines:[]};vs.lines=(vs.lines||[]).concat(cart.away);try{localStorage.setItem(cartKey('vt'),JSON.stringify(Object.assign(vs,{nom:vs.nom||cart.nom,tel:vs.tel||cart.tel,quartier:vs.quartier||cart.quartier})));}catch(e){}
@@ -2036,6 +2075,7 @@ document.addEventListener('change',function(e){
   var t=e.target, c=t.dataset.ch;
   if(t.id==='av_photo'&&t.files&&t.files[0]){readPhoto(t.files[0],function(u){if(!avf)return;avf.photo=u;openAvis(true);});return;}
   if(t.id==='ob_photo'&&t.files&&t.files[0]){readPhoto(t.files[0],function(u){if(!ONB)return;ONB.p.photo=u;openOnb(3);},900);return;}
+  if((t.id==='s_cover'||t.id==='s_logo')&&t.files&&t.files[0]){var ik=t.id==='s_cover'?'cover':'logo';readPhoto(t.files[0],function(u){S.shop[ik]=u;save();uploadShopImgs();openShop(true);toast(ik==='cover'?'Couverture ajoutée':'Photo de profil ajoutée');},ik==='cover'?1280:480);t.value='';return;}
   if(t.id==='p_photo'&&t.files&&t.files[0]){var fs=[].slice.call(t.files,0,Math.max(0,3-(pdraft&&pdraft.photos||[]).length));fs.forEach(function(f){readPhoto(f,function(u){if(!pdraft||pdraft.photos.length>=3)return;pdraft.photos.push(u);pdraft.photo=pdraft.photos[0];renderProduct(true);},1280);});return;}
   if(!c)return;
   if(c==='o-rider'){var o=byId(t.dataset.id);o.livreurId=t.value;o.transfert=null;if(t.value)addTrace(o,'La boutique confie le colis à '+prenom(rider(t.value)));save();render();showOrder(o.id,true);toast(t.value?'Livreur choisi':'Livreur retiré');}
