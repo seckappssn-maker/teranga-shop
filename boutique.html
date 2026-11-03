@@ -314,6 +314,8 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .r-list li.minus b,.kv.minus b{color:var(--ok)}
 .r-list li.tot{border-top:1px solid var(--line);padding-top:6px;font-weight:800}
 .bigsum .dette{display:block;margin-top:6px;opacity:.95}
+.pway{display:flex;flex-direction:column;gap:6px;padding-block:4px}
+.pway+.pway{border-top:1px solid var(--line);padding-top:10px}
 .paychk{display:flex;flex-direction:column;gap:6px;background:var(--info-soft);border-radius:var(--r);padding:12px 14px}
 .paychk>b{color:var(--info);font-size:15px}
 .paychk .btn-row{margin-top:4px}
@@ -645,7 +647,8 @@ function aEncaisser(o){return o.pay==='livraison'?total(o):o.pay==='acompte'?Mat
 function aRemettre(o){return Math.max(0,aEncaisser(o)-(o.frais||0));}
 function benef(o){return o.lignes.reduce(function(a,l){return a+(l.prix-(l.achat||0))*l.qte;},0);}
 function owes(o){return o.mode!=='retrait'&&o.statut==='livree'&&!o.verse&&aRemettre(o)>0;}
-function methods(){return ['wave','om','mixx'].filter(function(k){return normTel(S.shop[k]).length>=9;});}
+function payLink(k){var u=S&&S.shop&&S.shop[k+'Link'];return /^https:\/\/\S+$/.test(u||'')?u:'';}
+function methods(){return ['wave','om','mixx'].filter(function(k){return normTel(S.shop[k]).length>=9||!!payLink(k);});}
 function methodsTxt(){var m=methods().map(function(k){return PM[k];});return m.length<2?(m[0]||''):m.slice(0,-1).join(', ')+' ou '+m[m.length-1];}
 function imgOk(u){return /^(https:\/\/|data:image\/)/.test(u||'');}
 /* Couverture + photo de profil de la boutique (facultatives) : sans image, la page reste comme avant */
@@ -655,12 +658,14 @@ function markHTML(){return imgOk(S.shop.logo)?'<img src="'+S.shop.logo+'" alt=""
 function setMark(){var m=document.querySelector('.top .mark'),br=document.querySelector('.top .brand');if(br&&MODE==='public'&&PUBCODE&&!/[?&]b=[^&]*$/.test(location.search)&&!/[?&]live/.test(location.search)){br.setAttribute('data-act','go-shop');br.setAttribute('role','link');br.classList.add('to-shop');}if(!m)return;var l=MODE!=='demo'&&MODE!=='owner'&&imgOk(S.shop.logo);m.classList.toggle('has-logo',!!l);m.innerHTML=l?'<img src="'+S.shop.logo+'" alt="">':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';}
 function payOk(k){return k==='livraison'||methods().indexOf(k)>=0;}
 function waitPay(o){return !!o&&o.pay==='livraison'&&!!PM[o.payChoix]&&o.statut!=='livree'&&o.statut!=='retour';}
-function payNow(k,amt,num){if(!PM[k]||normTel(S.shop[k]).length<9)return '';return '<div class="card blk"><p>Pour payer, envoyez <b>'+F(amt)+'</b> par '+PM[k]+' :</p><div class="kv"><span>'+PM[k]+'</span><b class="sel">'+fmtTel(S.shop[k])+'</b></div><button class="btn sm ghost" data-act="copy" data-text="'+fmtTel(S.shop[k])+'">Copier le numéro '+PMS[k]+'</button></div>'+
+function payWay(k,amt){var n=normTel(S.shop[k]),lk=payLink(k);return (lk?'<a class="btn block pay-link" href="'+esc(lk)+'" target="_blank" rel="noopener">Payer'+(amt?' '+F(amt):'')+' avec '+PM[k]+'</a><small class="hint">Le bouton ouvre '+PM[k]+(amt?' : vérifiez que le montant est bien '+F(amt):'')+'.</small>':'')+
+  (n.length>=9?(lk?'<small class="hint">Ou envoyez au numéro :</small>':'')+'<div class="kv"><span>'+PM[k]+'</span><b class="sel">'+fmtTel(n)+'</b></div><button class="btn sm ghost" data-act="copy" data-text="'+fmtTel(n)+'">Copier le numéro '+PMS[k]+'</button>':'');}
+function payNow(k,amt,num){if(!PM[k]||(normTel(S.shop[k]).length<9&&!payLink(k)))return '';return '<div class="card blk"><p>Pour payer, envoyez <b>'+F(amt)+'</b> par '+PM[k]+' :</p>'+payWay(k,amt)+'</div>'+
   '<a class="btn block" href="'+wa(S.shop.tel,'Bonjour, j\'ai payé ma commande n°'+num+' par '+PM[k]+' : '+F(amt)+'. Voici la capture.')+'" target="_blank" rel="noopener">J\'ai payé : envoyer la capture sur WhatsApp</a>';}
 function payChips(){var m=methods();if(!m.length)return '';var rt=cart.mode==='retrait',cur=payOk(cart.pay)?cart.pay:'';
   return '<div class="fld"><span>Comment voulez-vous payer ?</span><div class="chips" role="group" aria-label="Paiement">'+[['livraison',rt?'Sur place':'À la livraison']].concat(m.map(function(k){return [k,PM[k]];})).map(function(x){return '<button class="chip" data-act="c-pay" data-v="'+x[0]+'" aria-pressed="'+(cur===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
     (cur==='livraison'?'<small class="hint">'+(rt?'Vous payez en passant récupérer':'Vous payez au livreur')+', en espèces ou par '+methodsTxt()+'.</small>':cur?'<small class="hint">Après la commande, vous voyez le numéro '+PM[cur]+' de la boutique et le montant à envoyer.</small>':'')+'</div>';}
-function payNums(){return methods().map(function(k){return '• '+PM[k]+' : '+fmtTel(S.shop[k]);}).join('\n');}
+function payNums(){return methods().map(function(k){var n=normTel(S.shop[k]),lk=payLink(k);return '• '+PM[k]+(n.length>=9?' : '+fmtTel(n):'')+(lk?'\n  Payer directement : '+lk:'');}).join('\n');}
 function optNom(p){return (p&&p.optNom)||'Taille';}
 function setSt(o,st){o.statut=st;o.hist=o.hist||{};o.hist[st]=Date.now();}
 function slug(){return (S.shop.nom||'boutique').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');}
@@ -823,7 +828,7 @@ function expireCheck(){var now=Date.now(),msgs=[];S.live.resa.forEach(function(r
 function liveLink(){return vitrineLink()+'&live';}
 function listeMsg(r,ok){var nom=(r.client.nom||'').split(' ')[0];return 'Bonjour'+(nom?' '+nom:'')+' 👋\nVous êtes sur notre liste d\'attente pour : '+rTxt(r)+'.\n'+(ok?'Bonne nouvelle : l\'article est de nouveau disponible. On vous le réserve maintenant.':'Il n\'est plus disponible pour le moment : on vous écrit dès qu\'il revient.')+'\n'+(S.shop.nom||'');}
 function rappel(r){var nom=(r.client.nom||'').split(' ')[0];return 'Bonjour'+(nom?' '+nom:'')+' 👋\nVous avez réservé pendant notre live : '+rTxt(r)+'. Total : '+F(rTot(r))+'.\nPour confirmer, envoyez l\'acompte de '+F(dueAmt(r))+' avant '+hm(r.expire)+(methods().length?' :\n'+payNums():'.')+'\nSans paiement, la réservation sera annulée.\n'+(S.shop.nom||'');}
-function payBox(r){var m=methods();if(!m.length)return '<p class="hint">La boutique va vous contacter sur WhatsApp pour confirmer.</p>';return '<div class="card blk"><p>Pour confirmer, envoyez l\'acompte de <b>'+F(dueAmt(r))+'</b> par '+methodsTxt()+' :</p>'+m.map(function(k){return '<div class="kv"><span>'+PM[k]+'</span><b class="sel">'+fmtTel(S.shop[k])+'</b></div><button class="btn sm ghost" data-act="copy" data-text="'+fmtTel(S.shop[k])+'">Copier le numéro '+PMS[k]+'</button>';}).join('')+'</div>';}
+function payBox(r){var m=methods();if(!m.length)return '<p class="hint">La boutique va vous contacter sur WhatsApp pour confirmer.</p>';return '<div class="card blk"><p>Pour confirmer, envoyez l\'acompte de <b>'+F(dueAmt(r))+'</b> par '+methodsTxt()+' :</p>'+m.map(function(k){return '<div class="pway">'+payWay(k,dueAmt(r))+'</div>';}).join('')+'</div>';}
 function resaCard(r){
   var line='<p class="resa-l">'+esc(rTxt(r))+' · <b>'+F(rTot(r))+'</b> · '+(r.mode==='retrait'?'<b>Retrait sur place</b>':esc(r.client.quartier||'—'))+'</p>';
   var name='<b>'+esc(r.client.nom||fmtTel(r.client.tel))+'</b>';
@@ -971,7 +976,7 @@ function tpl(o,k){
   var lines=o.lignes.map(function(l){return '• '+l.qte+' × '+l.nom+(l.taille?' ('+l.taille+')':'')+' : '+F(l.prix*l.qte);}).join('\n');
   if(k==='confirm'){
     var rt=o.mode==='retrait', where=rt?'sur place':'à la livraison';
-    var pay=enc<=0&&o.pay==='acompte'?'Tout est payé'+(o.acompteVia?' par '+PM[o.acompteVia]:'')+' ✅':o.pay==='livraison'&&PM[o.payChoix]&&normTel(S.shop[o.payChoix]).length>=9?'À payer par '+PM[o.payChoix]+' : '+F(enc)+'\n• '+PM[o.payChoix]+' : '+fmtTel(S.shop[o.payChoix])+'\nEnvoyez-nous la capture ici après le paiement.':o.pay==='livraison'?'À payer '+where+' : '+F(enc):o.pay==='acompte'?'Acompte reçu : '+F(o.acompte)+'\nReste à payer '+where+' : '+F(enc):'Articles déjà payés par '+(PM[o.pay]||'')+' ✅'+(o.frais?'\nLivraison à régler au livreur : '+F(o.frais):'');
+    var pay=enc<=0&&o.pay==='acompte'?'Tout est payé'+(o.acompteVia?' par '+PM[o.acompteVia]:'')+' ✅':o.pay==='livraison'&&PM[o.payChoix]&&(normTel(S.shop[o.payChoix]).length>=9||payLink(o.payChoix))?'À payer par '+PM[o.payChoix]+' : '+F(enc)+(normTel(S.shop[o.payChoix]).length>=9?'\n• '+PM[o.payChoix]+' : '+fmtTel(S.shop[o.payChoix]):'')+(payLink(o.payChoix)?'\nPayer directement : '+payLink(o.payChoix):'')+'\nEnvoyez-nous la capture ici après le paiement.':o.pay==='livraison'?'À payer '+where+' : '+F(enc):o.pay==='acompte'?'Acompte reçu : '+F(o.acompte)+'\nReste à payer '+where+' : '+F(enc):'Articles déjà payés par '+(PM[o.pay]||'')+' ✅'+(o.frais?'\nLivraison à régler au livreur : '+F(o.frais):'');
     return hi+' 👋\nVotre commande n°'+o.num+' chez '+shop+' est confirmée :\n'+lines+(rt?'':'\nLivraison : '+F(o.frais))+'\nTotal : '+F(total(o))+'\n'+pay+'\n\n'+(rt?'Retrait : '+(S.shop.adresse||'à la boutique'):'Adresse : '+(o.client.quartier||'à préciser'))+'\nMerci pour votre confiance 🙏';
   }
   if(k==='pret')return hi+', votre commande n°'+o.num+' est prête ✅\nVous pouvez passer la récupérer : '+(S.shop.adresse||'à la boutique')+'\n'+(enc>0?'À payer sur place : '+F(enc):'Tout est déjà payé ✅')+'\n'+shop;
@@ -1100,7 +1105,7 @@ function riderSheet(keep){var l=rdraft.id?rider(rdraft.id):null;
   '<p class="hint">Seulement pour un livreur de confiance. Il voit ses colis (adresse, numéro du client, montant à encaisser) et marque lui-même « récupéré », « livré » ou « retour ». Il ne voit jamais vos prix d\'achat ni vos bénéfices.</p>'+
   (rdraft.acces?'<div class="kv"><span>Son code</span><b class="sel">'+esc(rdraft.code)+'</b></div><button class="linkbtn" data-act="r-newcode">Changer le code</button>':'')+'</div>'+
   '<button class="btn block" data-act="r-save">Enregistrer</button>'+(l?'<button class="linkbtn danger" data-act="r-del">Retirer ce livreur</button>':''),keep);}
-function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),zone:sp.zone||'',code:ACC&&ACC.code||''};
+function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',waveLink:sp.waveLink||'',omLink:sp.omLink||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),zone:sp.zone||'',code:ACC&&ACC.code||''};
   openSheet('<div class="sh-head"><div><p class="eyebrow">Réglages</p><h2>Ma boutique</h2></div>'+closeBtn+'</div>'+
   '<label class="fld"><span>Nom de la boutique</span><input id="s_nom" data-s="nom" value="'+esc(sdraft.nom)+'"></label>'+
   '<div class="card blk"><b>Photo de profil et couverture <em>(facultatif)</em></b><p class="hint">Elles s\'affichent en haut de votre boutique en ligne, comme sur TikTok. Sans photo, la page reste simple.</p>'+
@@ -1113,7 +1118,9 @@ function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,te
   '<div class="card blk"><b>Moyens de paiement</b><p class="hint">Mettez seulement les numéros que vous utilisez. Vos clients voient uniquement ceux qui sont remplis.</p>'+
   '<label class="fld"><span>Numéro Wave</span><input id="s_wave" data-s="wave" inputmode="tel" value="'+esc(fmtTel(sdraft.wave))+'" placeholder="Laisser vide si vous n\'utilisez pas Wave"></label>'+
   '<label class="fld"><span>Numéro Orange Money</span><input id="s_om" data-s="om" inputmode="tel" value="'+esc(fmtTel(sdraft.om))+'" placeholder="Laisser vide si vous n\'utilisez pas Orange Money"></label>'+
-  '<label class="fld"><span>Numéro Mixx by Yas <em>(ex Free Money)</em></span><input id="s_mixx" data-s="mixx" inputmode="tel" value="'+esc(fmtTel(sdraft.mixx))+'" placeholder="Laisser vide si vous n\'utilisez pas Mixx"></label></div>'+
+  '<label class="fld"><span>Numéro Mixx by Yas <em>(ex Free Money)</em></span><input id="s_mixx" data-s="mixx" inputmode="tel" value="'+esc(fmtTel(sdraft.mixx))+'" placeholder="Laisser vide si vous n\'utilisez pas Mixx"></label>'+
+  '<label class="fld"><span>Lien de paiement Wave <em>(facultatif)</em></span><input id="s_wlink" data-s="waveLink" inputmode="url" autocapitalize="off" autocorrect="off" value="'+esc(sdraft.waveLink)+'" placeholder="https://pay.wave.com/m/…"><small class="hint">Si vous avez Wave Business : créez un « lien de paiement » dans l\'app Wave et collez-le ici. Vos clients auront un bouton « Payer avec Wave ». Sans lien, ils voient seulement votre numéro.</small></label>'+
+  '<label class="fld"><span>Lien de paiement Orange Money <em>(facultatif)</em></span><input id="s_olink" data-s="omLink" inputmode="url" autocapitalize="off" autocorrect="off" value="'+esc(sdraft.omLink)+'" placeholder="https://…"><small class="hint">Seulement si Orange Money vous a donné un lien de paiement marchand.</small></label></div>'+
   '<div class="card blk"><label class="check"><input type="checkbox" id="s_ret" data-ch="s-retrait"'+(sdraft.retrait?' checked':'')+'> Les clients peuvent passer récupérer</label>'+
   '<label class="fld"><span>Adresse et horaires du retrait</span><input id="s_adr" data-s="adresse" value="'+esc(sdraft.adresse)+'" placeholder="Ex. : Liberté 6, à côté de la pharmacie, 10h–20h"></label></div>'+
   '<label class="fld"><span>Zone de livraison</span><input id="s_zone" data-s="zone" maxlength="60" value="'+esc(sdraft.zone)+'" placeholder="Ex. : Touba et environs, Louga ville, tout le Sénégal"><small class="hint">Vos clients la voient sur votre boutique en ligne. Vide = « Livraison à domicile ».</small></label>'+
@@ -1318,7 +1325,7 @@ function openSuivi(oid,fromOrder){
     '<div class="sum">'+o.lignes.map(function(l){return '<div class="kv"><span>'+l.qte+' × '+esc(l.nom)+(l.taille?' · '+esc(l.taille):'')+'</span><b>'+F(l.prix*l.qte)+'</b></div>';}).join('')+
     (rt?'':'<div class="kv"><span>Livraison</span><b>'+(o.frais?F(o.frais):'Gratuite')+'</b></div>')+'<div class="kv total"><span>Total</span><b>'+F(total(o))+'</b></div>'+
     (st==='livree'||st==='retour'?'':due<=0?'<div class="kv"><span>Paiement</span><b>Tout payé ✓'+(o.acompteVia?' · '+PM[o.acompteVia]:'')+'</b></div>':'<div class="kv hl"><span>'+(waitPay(o)?'À payer par '+PM[o.payChoix]:rt?'À payer sur place':'À payer à la livraison')+'</span><b>'+F(due)+'</b></div>')+'</div>'+
-    (waitPay(o)&&normTel(S.shop[o.payChoix]).length>=9?'<p class="hint">'+esc(S.shop.nom||'La boutique')+' vérifie votre paiement. Pas encore payé ?</p>'+payNow(o.payChoix,due,o.num):'')+
+    (waitPay(o)&&(normTel(S.shop[o.payChoix]).length>=9||payLink(o.payChoix))?'<p class="hint">'+esc(S.shop.nom||'La boutique')+' vérifie votre paiement. Pas encore payé ?</p>'+payNow(o.payChoix,due,o.num):'')+
     (st==='livree'?(function(){var dj=(S.avis||[]).some(function(x){return x.orderId===o.id;});
       return '<div class="sv-avis"><span class="sv-stars" aria-hidden="true">★★★★★</span><b>'+(dj?'Merci pour votre avis !':(rt?'Votre achat vous plaît ?':'Votre commande est bien arrivée ?'))+'</b>'+
         (dj?'':'<small>Donnez votre avis en 1 minute : il aide d\'autres clients à commander en confiance.</small>')+
@@ -2102,10 +2109,11 @@ document.addEventListener('click',function(e){
 
     case 'client-order':closeSheet();newDraft({client:{nom:b.dataset.nom||'',tel:b.dataset.tel||'',quartier:b.dataset.q||''},src:'wa'});break;
     case 's-save':{
+      var badL=['waveLink','omLink'].filter(function(k){var u=String(sdraft[k]||'').trim();return u&&!/^https:\/\/\S+$/.test(u);});if(badL.length){toast('Le lien '+(badL[0]==='waveLink'?'Wave':'Orange Money')+' doit commencer par https://');break;}
       var bad=['wave','om','mixx'].filter(function(k){var d=normTel(sdraft[k]);return d&&d.length!==9;});
       if(bad.length){toast('Numéro '+PM[bad[0]]+' incomplet : 9 chiffres');break;}
       S.shop.nom=(sdraft.nom||'').trim()||'Ma boutique';S.shop.tel=normTel(sdraft.tel);
-      S.shop.wave=normTel(sdraft.wave);S.shop.om=normTel(sdraft.om);S.shop.mixx=normTel(sdraft.mixx);
+      S.shop.wave=normTel(sdraft.wave);S.shop.om=normTel(sdraft.om);S.shop.mixx=normTel(sdraft.mixx);S.shop.waveLink=String(sdraft.waveLink||'').trim().slice(0,400);S.shop.omLink=String(sdraft.omLink||'').trim().slice(0,400);
       S.shop.retrait=sdraft.retrait;S.shop.adresse=(sdraft.adresse||'').trim();S.shop.frais=num(sdraft.frais);S.shop.zone=(sdraft.zone||'').trim().slice(0,60);
       save();closeSheet();render();toast(methods().length?'Enregistré · paiement : '+methodsTxt():'Enregistré · aucun numéro de paiement');break;}
     case 's-reset':if(!armed(b,'Oui, revenir aux exemples'))break;S=seed();q='';filt='all';save();closeSheet();go('home');toast('Démo recommencée');break;
