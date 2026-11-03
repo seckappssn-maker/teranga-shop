@@ -803,6 +803,7 @@ function left(ts){var s=Math.max(0,Math.round((ts-Date.now())/1000)),m=Math.floo
 function promote(pid){if(MODE!=='demo')return null;var w=S.live.resa.filter(function(r){return r.statut==='liste'&&hasPid(r,pid);}).sort(function(a,b){return a.date-b.date;})[0];if(w&&w.lignes.every(function(l){return avail(l.pid)>=l.qte;})){w.statut='attente';w.expire=Date.now()+S.live.delai*60e3;w.promu=true;return w;}return null;}
 function expireCheck(){var now=Date.now(),msgs=[];S.live.resa.forEach(function(r){if(r.statut==='attente'&&r.expire<=now){r.statut='expiree';var w=promoteAll(r);msgs.push((r.client.nom||'Un client')+' n\'a pas payé : réservation annulée'+(w?'. '+w.client.nom+' passe en premier':''));}});return msgs;}
 function liveLink(){return vitrineLink()+'&live';}
+function listeMsg(r,ok){var nom=(r.client.nom||'').split(' ')[0];return 'Bonjour'+(nom?' '+nom:'')+' 👋\nVous êtes sur notre liste d\'attente pour : '+rTxt(r)+'.\n'+(ok?'Bonne nouvelle : l\'article est de nouveau disponible. On vous le réserve maintenant.':'Il n\'est plus disponible pour le moment : on vous écrit dès qu\'il revient.')+'\n'+(S.shop.nom||'');}
 function rappel(r){var nom=(r.client.nom||'').split(' ')[0];return 'Bonjour'+(nom?' '+nom:'')+' 👋\nVous avez réservé pendant notre live : '+rTxt(r)+'. Total : '+F(rTot(r))+'.\nPour confirmer, envoyez l\'acompte de '+F(dueAmt(r))+' avant '+hm(r.expire)+(methods().length?' :\n'+payNums():'.')+'\nSans paiement, la réservation sera annulée.\n'+(S.shop.nom||'');}
 function payBox(r){var m=methods();if(!m.length)return '<p class="hint">La boutique va vous contacter sur WhatsApp pour confirmer.</p>';return '<div class="card blk"><p>Pour confirmer, envoyez l\'acompte de <b>'+F(dueAmt(r))+'</b> par '+methodsTxt()+' :</p>'+m.map(function(k){return '<div class="kv"><span>'+PM[k]+'</span><b class="sel">'+fmtTel(S.shop[k])+'</b></div><button class="btn sm ghost" data-act="copy" data-text="'+fmtTel(S.shop[k])+'">Copier le numéro '+PMS[k]+'</button>';}).join('')+'</div>';}
 function resaCard(r){
@@ -812,7 +813,11 @@ function resaCard(r){
     '<p class="resa-l">Acompte attendu : <b>'+F(dueAmt(r))+'</b>'+(r.promu?' · <span class="pill st-info">Venue de la liste</span>':'')+'</p>'+
     '<div class="btn-row">'+methods().map(function(k,_,m){return '<button class="btn sm ok" data-act="rs-paid" data-v="'+k+'" data-id="'+r.id+'">'+(m.length>1?'Payé '+PMS[k]:'Payé')+'</button>';}).join('')+'<button class="btn sm soft" data-act="rs-trust" data-id="'+r.id+'">Confirmé sans acompte</button></div>'+
     '<div class="btn-row"><a class="btn sm ghost" href="'+wa(r.client.tel,rappel(r))+'" target="_blank" rel="noopener">Rappel WhatsApp</a><button class="btn sm ghost" data-act="rs-more" data-id="'+r.id+'">+'+S.live.delai+' min</button></div><button class="linkbtn danger" data-act="rs-cancel" data-id="'+r.id+'">Annuler la réservation</button></article>';
-  if(r.statut==='liste')return '<article class="resa"><div class="resa-top">'+name+'<span class="pill st-warn">Liste d\'attente</span></div>'+line+'<p class="hint">Elle passe en premier si une réservation est annulée.</p><button class="linkbtn danger" data-act="rs-cancel" data-id="'+r.id+'">Retirer</button></article>';
+  if(r.statut==='liste'){
+    return '<article class="resa"><div class="resa-top">'+name+'<span class="pill st-warn">Liste d\'attente</span></div>'+line+
+    '<p class="hint">L\'article est épuisé. Cette personne passe en premier dès qu\'une réservation est annulée ou que vous remettez du stock : l\'app le lui réserve toute seule et elle a '+S.live.delai+' min pour payer.</p>'+
+    '<div class="btn-row"><a class="btn sm ghost" href="'+wa(r.client.tel,listeMsg(r,false))+'" target="_blank" rel="noopener">Écrire sur WhatsApp</a></div>'+
+    '<button class="linkbtn danger" data-act="rs-cancel" data-id="'+r.id+'">Retirer de la liste</button></article>';}
   if(r.statut==='payee'){var o=byId(r.orderId);return '<article class="resa"><div class="resa-top">'+name+'<span class="pill st-ok">Payée</span></div>'+line+(o?'<button class="linkbtn" data-act="open-order" data-id="'+o.id+'">Voir la commande #'+o.num+'</button>':'')+'</article>';}
   return '<article class="resa off"><div class="resa-top">'+name+'<span class="pill st-bad">'+(r.statut==='expiree'?'Pas payé':'Annulée')+'</span></div>'+line+'</article>';
 }
@@ -1990,9 +1995,10 @@ document.addEventListener('click',function(e){
       var oldSt=p.id&&prod(p.id)?(+prod(p.id).stock||0):0, newSt=+p.stock||0;
       if(p.id){S.produits=S.produits.map(function(x){return x.id===p.id?p:x;});}else{p.id='p'+Date.now();S.produits.push(p);}
       p.stock=oldSt;setStock(p,newSt);
+      var wpr=MODE==='demo'?promote(p.id):null;
       save();uploadPhotos(p.id);
       if(back&&wn){render();openProduct(p.id);toast(plural(wn,'client attend','clients attendent')+' cet article : prévenez-les');}
-      else{closeSheet();render();toast('Article enregistré');}
+      else{closeSheet();render();toast(wpr?'Article enregistré · '+(wpr.client.nom||'un client')+' passe de la liste d\'attente : réservé '+S.live.delai+' min':'Article enregistré');}
       break;}
     case 'al-sent':{var pp=prod(id),ix2=+b.dataset.i;if(pp&&pp.alertes[ix2]){pp.alertes[ix2].ok=true;save();render();openProduct(id,true);}break;}
     case 'o-suivi':openSuivi(id,true);break;
