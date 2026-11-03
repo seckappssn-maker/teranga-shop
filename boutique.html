@@ -670,7 +670,7 @@ function render(){
   var n=S.commandes.filter(function(o){return o.statut==='nouvelle';}).length, bd=$('#badge');
   bd.textContent=n;bd.hidden=!n;
   $('#shopName').textContent=S.shop.nom||'Ma boutique';
-  $('#fab').hidden=!(tab==='home'||tab==='orders');
+  $('#fab').hidden=tab!=='orders';
   var v=$('#view');
   v.innerHTML=(MODE==='owner'&&!NETOK?'<p class="net-off">Pas de connexion : vos changements seront envoyés dès que le réseau revient.</p>':'')+(tab==='home'?homeHTML():tab==='orders'?ordersHTML():tab==='live'?liveHTML():tab==='products'?productsHTML():ridersHTML());
   if(tab==='orders')renderOrderList();
@@ -715,7 +715,7 @@ function homeHTML(){
     '<p class="src-insight"><b>'+SRC[top]+'</b> vous apporte le plus de commandes : '+cnt[top]+' sur '+last.length+'.</p>'+
     '<div class="sbar" role="img" aria-label="Répartition des commandes par réseau">'+keys.map(function(k){return '<i style="flex:'+cnt[k]+' 1 0;background:var(--p-'+k+')"></i>';}).join('')+'</div>'+
     '<ul class="legend">'+keys.map(function(k){return '<li><i style="background:var(--p-'+k+')"></i>'+SRC[k]+'<b>'+cnt[k]+'</b></li>';}).join('')+'</ul></div></section>':'')+
-  '<button class="clients-row" data-act="clients"><span class="av">'+clientsN+'</span><span class="tx"><b>Vos clients</b><small>'+plural(clientsN,'client','clients')+(fid?' · '+plural(fid,'cliente fidèle','clientes fidèles'):'')+' · relancez-les sur WhatsApp</small></span>'+chev+'</button>';
+  '<button class="clients-row" data-act="clients"><span class="av">'+clientsN+'</span><span class="tx"><b>Vos clients</b><small>'+plural(clientsN,'client','clients')+(fid?' · '+plural(fid,'client fidèle','clients fidèles'):'')+' · '+(clientsN>1?'relancez-les':'relancez-le')+' sur WhatsApp</small></span>'+chev+'</button>';
 }
 
 function ordersHTML(){
@@ -960,7 +960,7 @@ function knownClient(silent){
   if(t.length<9){el.textContent='';return;}
   var c=clientList().filter(function(x){return normTel(x.tel)===t;})[0];
   if(!c){el.textContent='';return;}
-  el.textContent='Cliente connue : '+c.nom+' · '+plural(c.n,'commande','commandes')+(c.n>=3?' · fidèle':'');
+  el.textContent='Déjà client : '+c.nom+' · '+plural(c.n,'commande','commandes')+(c.n>=3?' · fidèle':'');
   if(!draft.client.nom&&c.nom){draft.client.nom=c.nom;var n=$('#d_nom');if(n)n.value=c.nom;}
   if(!draft.client.quartier&&c.quartier){draft.client.quartier=c.quartier;var qd=$('#d_q');if(qd)qd.value=c.quartier;}
 }
