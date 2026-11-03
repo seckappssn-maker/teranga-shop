@@ -304,6 +304,9 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .ip-cover img{width:100%;height:100%;object-fit:cover}
 .ip-logo{position:absolute;left:14px;bottom:0;width:72px;height:72px;border-radius:50%;overflow:hidden;display:grid;place-items:center;border:3px solid var(--bg);background:var(--surface-2,var(--surface));box-shadow:0 0 0 1.5px var(--line);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;text-align:center}
 .ip-logo img{width:100%;height:100%;object-fit:cover}
+.go-shop{display:flex;align-items:center;justify-content:center;gap:8px}
+.go-shop svg{width:18px;height:18px;flex:none}
+.brand.to-shop{cursor:pointer}
 .paychk{display:flex;flex-direction:column;gap:6px;background:var(--info-soft);border-radius:var(--r);padding:12px 14px}
 .paychk>b{color:var(--info);font-size:15px}
 .paychk .btn-row{margin-top:4px}
@@ -636,7 +639,7 @@ function imgOk(u){return /^(https:\/\/|data:image\/)/.test(u||'');}
 function hero(sub,small){var c=imgOk(S.shop.cover)?S.shop.cover:'',l=imgOk(S.shop.logo)?S.shop.logo:'';if(!c)return '';
   return '<div class="hero'+(small?' sm':'')+'"><img class="hero-c" src="'+c+'" alt=""><div class="hero-in">'+(l?'<img class="hero-logo" src="'+l+'" alt="">':'')+'<div><b>'+esc(S.shop.nom||'Ma boutique')+'</b>'+(sub?'<span>'+sub+'</span>':'')+'</div></div></div>';}
 function markHTML(){return imgOk(S.shop.logo)?'<img src="'+S.shop.logo+'" alt="">':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';}
-function setMark(){var m=document.querySelector('.top .mark');if(!m)return;var l=MODE!=='demo'&&MODE!=='owner'&&imgOk(S.shop.logo);m.classList.toggle('has-logo',!!l);m.innerHTML=l?'<img src="'+S.shop.logo+'" alt="">':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';}
+function setMark(){var m=document.querySelector('.top .mark'),br=document.querySelector('.top .brand');if(br&&MODE==='public'&&PUBCODE&&!/[?&]b=[^&]*$/.test(location.search)&&!/[?&]live/.test(location.search)){br.setAttribute('data-act','go-shop');br.setAttribute('role','link');br.classList.add('to-shop');}if(!m)return;var l=MODE!=='demo'&&MODE!=='owner'&&imgOk(S.shop.logo);m.classList.toggle('has-logo',!!l);m.innerHTML=l?'<img src="'+S.shop.logo+'" alt="">':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';}
 function payOk(k){return k==='livraison'||methods().indexOf(k)>=0;}
 function waitPay(o){return !!o&&o.pay==='livraison'&&!!PM[o.payChoix]&&o.statut!=='livree'&&o.statut!=='retour';}
 function payNow(k,amt,num){if(!PM[k]||normTel(S.shop[k]).length<9)return '';return '<div class="card blk"><p>Pour payer, envoyez <b>'+F(amt)+'</b> par '+PM[k]+' :</p><div class="kv"><span>'+PM[k]+'</span><b class="sel">'+fmtTel(S.shop[k])+'</b></div><button class="btn sm ghost" data-act="copy" data-text="'+fmtTel(S.shop[k])+'">Copier le numéro '+PMS[k]+'</button></div>'+
@@ -1182,7 +1185,7 @@ function openClient(keep){
     var hr=hero('Commandez en ligne');
     openSheet((hr&&solo()?'':shHead('Vue client','Boutique en ligne'))+hr+
     '<div class="vt-head'+(hr?' slim':'')+'">'+(hr?'':'<span class="mark'+(imgOk(S.shop.logo)?' has-logo':'')+'" aria-hidden="true">'+markHTML()+'</span>')+'<div>'+(hr?'':'<b>'+sh+'</b>')+(av.length?'<span class="avg">'+stars(avg)+' <b>'+avg.toFixed(1).replace('.',',')+'</b> · '+plural(av.length,'avis client','avis clients')+'</span>':'')+'<small>Livraison Dakar et banlieue'+(S.shop.retrait?' ou retrait sur place':'')+(methods().length?' · '+methodsTxt()+' ou à la réception':'')+'</small></div></div>'+
-    '<p class="hint">Ajoutez autant d\'articles que vous voulez, puis ouvrez le panier.</p>'+backNote()+
+    '<p class="hint">Ajoutez autant d\'articles que vous voulez, puis ouvrez le panier.</p>'+backNote()+myCmdBlock()+
     '<div class="vt-grid">'+vis.map(function(p){var pa=avisFor(p.id);return '<div class="vt-card">'+picBtn(p)+'<div class="in"><b>'+esc(p.nom)+'</b><span class="pr">'+F(p.vente)+'</span>'+(pa.length?'<span class="mini-rate">'+stars(avgNote(pa))+' ('+pa.length+')</span>':'')+(p.stock>0?'<span class="av-ok">Disponible</span>':'<span class="av-pre">Précommande · arrivage '+esc(p.arrivage||'bientôt')+'</span>')+addCtl(p)+(p.stock>0?'':'<button class="linkbtn" data-act="c-alert" data-id="'+p.id+'">Prévenez-moi à l\'arrivage</button>')+'</div></div>';}).join('')+'</div>'+
     (av.length?'<section class="blk"><h3>Ce que disent les clients</h3>'+av.slice(0,4).map(function(a){return avisCard(a,false);}).join('')+'</section>':'')+
     '<p class="vt-note">Aperçu : c\'est ce que voient vos clients quand ils ouvrent votre lien.</p>'+cartBar(),keep);
@@ -1284,7 +1287,7 @@ function openSuivi(oid,fromOrder){
       return '<div class="sv-avis"><span class="sv-stars" aria-hidden="true">★★★★★</span><b>'+(dj?'Merci pour votre avis !':(rt?'Votre achat vous plaît ?':'Votre commande est bien arrivée ?'))+'</b>'+
         (dj?'':'<small>Donnez votre avis en 1 minute : il aide d\'autres clients à commander en confiance.</small>')+
         '<button class="btn block" data-act="suivi-avis" data-id="'+o.id+'">'+(dj?'Voir mon avis':'Donner mon avis')+'</button></div>';})():'')+
-    '<a class="btn block ghost" href="'+wa(S.shop.tel,'Bonjour, une question sur ma commande n°'+o.num)+'" target="_blank" rel="noopener">Une question ? Écrire à la boutique</a>'+
+    '<a class="btn block ghost" href="'+wa(S.shop.tel,'Bonjour, une question sur ma commande n°'+o.num)+'" target="_blank" rel="noopener">Une question ? Écrire à la boutique</a>'+shopBtn()+
     '<p class="vt-note">Démo : c\'est ce que voit le client quand il ouvre son lien de suivi. Il se met à jour tout seul quand vous changez l\'étape.</p>'+
     (fromOrder?'<button class="linkbtn" data-act="open-order" data-id="'+o.id+'">← Retour à la commande</button>':''));
 }
@@ -1299,7 +1302,7 @@ function openAvis(keep){
     '<label class="photo-pick" for="av_photo">'+(avf.photo?'<span class="tile lg"><img src="'+avf.photo+'" alt=""></span>':'<span class="tile lg" aria-hidden="true">+</span>')+'<span><b>'+(avf.photo?'Changer la photo':'Ajouter une photo')+'</b><small>Montrez l\'article reçu (facultatif).</small></span><input id="av_photo" type="file" accept="image/*" class="vh"></label>'+
     '<button class="btn block" data-act="av-send">Publier mon avis</button>')+
     '<p class="vt-note">Démo : seul un client qui a reçu sa commande reçoit ce lien. Son avis s\'affiche sur votre boutique en ligne.</p>'+
-    (MODE==='public'&&avf.tk?'<button class="linkbtn" data-act="avis-suivi">← Suivi de ma commande</button>':'')+
+    (MODE==='public'&&avf.tk?'<button class="linkbtn" data-act="avis-suivi">← Suivi de ma commande</button>':'')+shopBtn()+
     (avf.fromOrder?'<button class="linkbtn" data-act="open-order" data-id="'+o.id+'">← Retour à la commande</button>':''),keep);
 }
 
@@ -1382,7 +1385,8 @@ function whenSB(cb){
     if(Date.now()-t0>15000){pageMsg('Pas de connexion internet','Vérifiez votre connexion, puis réessayez.',true);return;}
     setTimeout(w,150);})();
 }
-function pageMsg(t,txt,retry){openSheet(shHead(esc(S&&S.shop&&S.shop.nom||'Teranga Shop'),esc(t))+'<p class="hint">'+txt+'</p>'+(retry?'<button class="btn block" data-act="reload">Réessayer</button>':''));}
+function pageMsg(t,txt,retry,shop){openSheet(shHead(esc(S&&S.shop&&S.shop.nom||'Teranga Shop'),esc(t))+'<p class="hint">'+txt+'</p>'+(retry?'<button class="btn block" data-act="reload">Réessayer</button>':'')+(shop&&PUBCODE?'<button class="btn block ghost go-shop" data-act="go-shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>Voir la boutique · nouvelle commande</button>':''));}
+function shopBtn(){return MODE==='public'&&PUBCODE?'<button class="btn block ghost go-shop" data-act="go-shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>Voir la boutique · nouvelle commande</button>':'';}
 function emptyS(){return {v:9,shop:{nom:'Ma boutique',tel:'',wave:'',om:'',mixx:'',retrait:false,adresse:'',frais:1500},produits:[],commandes:[],livreurs:[],avis:[],live:{actif:false,debut:0,items:[],current:'',acompte:2000,delai:30,resa:[]}};}
 function rnd(n){var s='';while(s.length<n)s+=Math.random().toString(36).slice(2);return s.slice(0,n);}
 function frDate(iso){return iso?String(iso).slice(0,10).split('-').reverse().join('/'):'';}
@@ -1673,16 +1677,21 @@ function restoreResas(){var l=myResas().filter(function(y){return Date.now()-y.d
 function myResaBlock(){if(MODE!=='public')return '';var l=S.live.resa;if(!l.length)return '';
   var lab={attente:'À payer',liste:'Liste d\'attente',payee:'Confirmée',expiree:'Annulée (pas payé)',annulee:'Annulée'};
   return '<div class="my-box"><b>Vos réservations</b>'+l.map(function(r){return '<div class="kv"><span>'+esc(rTxt(r))+'</span><button class="linkbtn" data-act="c-myresa" data-id="'+r.id+'">'+(lab[r.statut]||r.statut)+' →</button></div>';}).join('')+'</div>';}
+function cmdKey(){return 'teranga-shop-cmds-'+PUBCODE;}
+function myCmds(){try{return JSON.parse(lsGet(cmdKey())||'[]');}catch(e){return [];}}
+function saveMyCmd(id,tk,num){var l=myCmds().filter(function(y){return y.id!==id;});l.unshift({id:id,tk:tk,num:num,date:Date.now()});lsSet(cmdKey(),JSON.stringify(l.slice(0,10)));}
+function myCmdBlock(){if(MODE!=='public')return '';var l=myCmds().filter(function(y){return Date.now()-y.date<30*86400e3;}).slice(0,3);if(!l.length)return '';
+  return '<div class="my-box"><b>Vos commandes</b>'+l.map(function(y){return '<div class="kv"><span>Commande n°'+esc(String(y.num||''))+' · '+when(y.date)+'</span><button class="linkbtn" data-act="c-mycmd" data-id="'+esc(y.id)+'" data-k="'+esc(y.tk)+'">Suivre →</button></div>';}).join('')+'</div>';}
 function suiviURL(id,tk){return '?b='+encodeURIComponent(PUBCODE)+'&s='+encodeURIComponent(id)+'&k='+encodeURIComponent(tk||'');}
 function pubSuivi(id,tk,silent){rpc('shop_suivi',{p_code:PUBCODE,p_id:id,p_tk:tk||''}).then(function(r){
-    if(!r||!r.ok){if(!silent)pageMsg('Lien introuvable','Ce lien de suivi n\'est plus valable. Écrivez à la boutique sur WhatsApp.',false);return;}
+    if(!r||!r.ok){if(!silent)pageMsg('Lien introuvable','Ce lien de suivi n\'est plus valable. Écrivez à la boutique sur WhatsApp.',false,true);return;}
     S=emptyS();S.shop=Object.assign(S.shop,r.shop);var o=r.o;o.client=Object.assign({tel:'',quartier:''},o.client);o.hist=o.hist||{};
     S.commandes=[o];S.livreurs=r.livreur?[r.livreur]:[];$('#shopName').textContent=S.shop.nom;setMark();document.title='Commande n°'+o.num+' · '+S.shop.nom;openSuivi(o.id,false);})
   .catch(function(e){if(!silent)pageMsg('Pas de connexion',errMsg(e),true);});}
 function pubAvis(id,tk){rpc('shop_avis_info',{p_code:PUBCODE,p_id:id,p_tk:tk||''}).then(function(r){
-    if(!r||!r.ok){pageMsg('Lien introuvable','Ce lien n\'est plus valable.',false);return;}
+    if(!r||!r.ok){pageMsg('Lien introuvable','Ce lien n\'est plus valable.',false,true);return;}
     S=emptyS();S.shop.nom=r.shop.nom;S.shop.logo=r.shop.logo||'';var o=r.o;o.client=Object.assign({tel:'',quartier:''},o.client);S.commandes=[o];$('#shopName').textContent=S.shop.nom;setMark();
-    if(o.statut!=='livree'&&!r.deja){pageMsg('Merci !','Vous pourrez donner votre avis quand vous aurez reçu votre commande n°'+o.num+'.',false);return;}
+    if(o.statut!=='livree'&&!r.deja){pageMsg('Merci !','Vous pourrez donner votre avis quand vous aurez reçu votre commande n°'+o.num+'.',false,true);return;}
     avf={oid:o.id,tk:tk,note:5,texte:'',photo:'',sent:!!r.deja};openAvis();})
   .catch(function(e){pageMsg('Pas de connexion',errMsg(e),true);});}
 function pubSend(a,b){
@@ -1703,7 +1712,7 @@ function pubSend(a,b){
     .catch(function(e){done();toast(errMsg(e));});
   else{var pc=PM[cart.pay]&&payOk(cart.pay)?cart.pay:'', ot=cartTot()+(rt?0:fraisDef());
     rpc('shop_commander',{p_code:PUBCODE,p:{client:cl,lignes:lines,mode:cart.mode,payChoix:pc}}).then(function(r){
-      cart.onum=r.num;cart.oid=r.id;cart.otk=r.tk;cart.opay=r.payChoix===undefined?pc:r.payChoix;cart.otot=r.total||ot;cart.lines=[];saveCart();cart.step='done';openClient();pubLoad();})
+      cart.onum=r.num;cart.oid=r.id;cart.otk=r.tk;saveMyCmd(r.id,r.tk,r.num);cart.opay=r.payChoix===undefined?pc:r.payChoix;cart.otot=r.total||ot;cart.lines=[];saveCart();cart.step='done';openClient();pubLoad();})
     .catch(function(e){done();toast(errMsg(e));});}
 }
 
@@ -1838,6 +1847,8 @@ function handleMode(a,b,id){
     if(a==='c-send'||a==='c-sendwait'){pubSend(a,b);return true;}
     if(a==='c-suivi'){location.search=suiviURL(cart.oid,cart.otk);return true;}
     if(a==='c-resa-suivi'){location.search=suiviURL(b.dataset.id,b.dataset.k);return true;}
+    if(a==='c-mycmd'){location.search=suiviURL(b.dataset.id,b.dataset.k);return true;}
+    if(a==='go-shop'){location.search='?b='+encodeURIComponent(PUBCODE);return true;}
     if(a==='suivi-avis'){var sk=new URLSearchParams(location.search).get('k')||'';location.search='?b='+encodeURIComponent(PUBCODE)+'&a='+encodeURIComponent(id||'')+'&k='+encodeURIComponent(sk);return true;}
     if(a==='avis-suivi'&&avf){location.search=suiviURL(avf.oid,avf.tk);return true;}
     if(a==='c-sendalert'){if(!cart.nom.trim()||normTel(cart.tel).length<9){toast('Écrivez votre nom et votre numéro WhatsApp');return true;}
