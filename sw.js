@@ -1,5 +1,5 @@
-// Teranga Shop : ouverture sans internet + notifications des commandes (Seck Apps)
-const CACHE = 'teranga-shop-v1';
+// Teranga Shop : ouverture sans internet + notifications (vendeur et livreur, Seck Apps)
+const CACHE = 'teranga-shop-v2';
 const BASE = ['./', './index.html', './icon-192.png', './apple-touch-icon.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js'];
 
@@ -32,14 +32,16 @@ self.addEventListener('push', e => {
   try { d = e.data ? e.data.json() : {}; } catch (x) { d = { body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(d.title || 'Teranga Shop', {
     body: d.body || '', tag: d.tag || 'shop', renotify: true, vibrate: [300, 120, 300],
-    icon: './apple-touch-icon.png', badge: './icon-192.png', data: { url: './' }
+    icon: './apple-touch-icon.png', badge: './icon-192.png', data: { url: /^https:\/\/seckappssn-maker\.github\.io\//.test(d.url || '') ? d.url : './' }
   }));
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil((async () => {
+    const target = (e.notification.data && e.notification.data.url) || './';
+    const liv = /[?&]livreur/.test(target);   // notification du livreur : on ouvre son espace
     const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const w of wins) if (!/[?&]b=/.test(w.url)) { await w.focus(); return; }
-    await self.clients.openWindow('./');
+    for (const w of wins) if (liv ? /[?&]livreur/.test(w.url) : !/[?&]b=/.test(w.url)) { await w.focus(); return; }
+    await self.clients.openWindow(target);
   })());
 });
