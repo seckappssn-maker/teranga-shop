@@ -657,7 +657,7 @@ function imgOk(u){return /^(https:\/\/|data:image\/)/.test(u||'');}
 function hero(sub,small){var c=imgOk(S.shop.cover)?S.shop.cover:'',l=imgOk(S.shop.logo)?S.shop.logo:'';if(!c)return '';
   return '<div class="hero'+(small?' sm':'')+'"><img class="hero-c" src="'+c+'" alt=""><div class="hero-in">'+(l?'<img class="hero-logo" src="'+l+'" alt="">':'')+'<div><b>'+esc(S.shop.nom||'Ma boutique')+'</b>'+(sub?'<span>'+sub+'</span>':'')+'</div></div></div>';}
 function markHTML(){return imgOk(S.shop.logo)?'<img src="'+S.shop.logo+'" alt="">':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';}
-function setMark(){var m=document.querySelector('.top .mark'),br=document.querySelector('.top .brand');if(br&&MODE==='public'&&PUBCODE&&!/[?&]b=[^&]*$/.test(location.search)&&!/[?&]live/.test(location.search)){br.setAttribute('data-act','go-shop');br.setAttribute('role','link');br.classList.add('to-shop');}if(!m)return;var l=MODE!=='demo'&&MODE!=='owner'&&imgOk(S.shop.logo);m.classList.toggle('has-logo',!!l);m.innerHTML=l?'<img src="'+S.shop.logo+'" alt="">':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';}
+function setMark(){var m=document.querySelector('.top .mark'),br=document.querySelector('.top .brand');if(br&&MODE==='public'&&PUBCODE&&!/[?&]b=[^&]*$/.test(location.search)&&!/[?&]live/.test(location.search)){br.setAttribute('data-act','go-shop');br.setAttribute('role','link');br.classList.add('to-shop');}if(!m)return;var l=MODE!=='demo'&&imgOk(S.shop.logo);if(m.dataset.src===(l?S.shop.logo:'-'))return;m.dataset.src=l?S.shop.logo:'-';m.classList.toggle('has-logo',!!l);m.innerHTML=l?'<img src="'+S.shop.logo+'" alt="">':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';}
 function payOk(k){return k==='livraison'||methods().indexOf(k)>=0;}
 function waitPay(o){return !!o&&o.pay==='livraison'&&!!PM[o.payChoix]&&o.statut!=='livree'&&o.statut!=='retour';}
 function payWay(k,amt){var n=normTel(S.shop[k]),lk=payLink(k);return (lk?'<a class="btn block pay-link" href="'+esc(lk)+'" target="_blank" rel="noopener">Payer'+(amt?' '+F(amt):'')+' avec '+PM[k]+'</a><small class="hint">Le bouton ouvre '+PM[k]+(amt?' : vérifiez que le montant est bien '+F(amt):'')+'.</small>':'')+
@@ -737,7 +737,7 @@ function render(){
   document.querySelectorAll('.tab').forEach(function(b){if(b.dataset.tab===tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
   var n=S.commandes.filter(function(o){return o.statut==='nouvelle';}).length, bd=$('#badge');
   bd.textContent=n;bd.hidden=!n;
-  $('#shopName').textContent=S.shop.nom||'Ma boutique';
+  $('#shopName').textContent=S.shop.nom||'Ma boutique';setMark();
   $('#fab').hidden=tab!=='orders';
   var v=$('#view');
   v.innerHTML=(MODE==='owner'&&!NETOK?'<p class="net-off">Pas de connexion : vos changements seront envoyés dès que le réseau revient.</p>':'')+(tab==='home'?homeHTML():tab==='orders'?ordersHTML():tab==='live'?liveHTML():tab==='products'?productsHTML():ridersHTML());
@@ -1797,7 +1797,10 @@ function startLivreur(){setMode('livreur');livInstall();var c=lsGet(livKey())||'
   clearInterval(PUBT);PUBT=setInterval(function(){if(document.visibilityState!=='hidden'&&liv&&liv.id&&!liv.deliver&&!liv.pass&&!liv.pay)livFetch();},20000);}
 function applyLiv(r){SKEW=(r.now||Date.now())-Date.now();S=emptyS();S.shop=Object.assign(S.shop,r.shop);
   S.livreurs=[r.me].concat(r.autres||[]);S.commandes=(r.commandes||[]).map(function(o){o.client=o.client||{nom:'',tel:'',quartier:''};o.hist=o.hist||{};o.parts=o.parts||[];return o;});
-  $('#shopName').textContent=S.shop.nom;document.title='Espace livreur · '+S.shop.nom;}
+  $('#shopName').textContent=S.shop.nom;document.title='Espace livreur · '+S.shop.nom;livLogo();}
+var LIVLOGO=0;
+function livLogo(){var k='teranga-shop-logo-'+PUBCODE,c=lsGet(k);if(!S.shop.logo&&c)S.shop.logo=c;setMark();if(LIVLOGO)return;LIVLOGO=1;
+  rpc('shop_public',{p_code:PUBCODE}).then(function(r){if(r&&r.ok&&r.shop){var l=r.shop.logo||'';lsSet(k,l);if(MODE==='livreur'&&S.shop.logo!==l){S.shop.logo=l;setMark();}}}).catch(function(){});}
 function livLogin(c,silent){rpc('shop_liv',{p_code:PUBCODE,p_liv:c}).then(function(r){
     if(!r||!r.ok){lsSet(livKey(),null);liv={id:'',code:''};openLivreur();if(!silent)toast(r&&r.erreur||'Code incorrect');return;}
     lsSet(livKey(),c);LIVC=c;applyLiv(r);liv={id:r.me.id,code:c};openLivreur();})
