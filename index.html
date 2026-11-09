@@ -158,6 +158,25 @@ button.stat:active{transform:scale(.985)}
 .chips.scroll::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 13px;font-weight:700;font-size:13.5px;display:inline-flex;gap:6px;align-items:center;color:var(--fg)}
 .chip[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+/* Livraison groupée */
+.livopt{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lo{display:flex;flex-direction:column;gap:3px;text-align:left;border:2px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px;color:var(--fg);min-width:0}
+.lo[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.lo .lo-t{font-weight:800;font-size:15px}
+.lo .lo-p{font-weight:800;font-size:18px}
+.lo small{color:var(--muted);font-size:12.5px;line-height:1.35}
+.lo small b{color:var(--fg)}
+.lo .lo-eco{color:var(--ok);font-weight:800}
+.grp-note{background:var(--info-soft);border-radius:var(--r);padding:12px 14px;line-height:1.4;margin:0}
+.grp-note small{display:block;color:var(--muted);margin-top:2px}
+.rider-tag.grp{background:var(--info-soft);color:var(--info)}
+.zrow{border-top:1px solid var(--line);padding-top:12px;margin-top:4px;display:flex;flex-direction:column;gap:10px}
+.zrow .zhead{display:flex;gap:10px;align-items:flex-end}.zrow .zhead .fld{flex:1;min-width:0}
+.chips.days .chip{padding:8px 11px}
+.grp-ord{display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:10px 0}
+.grp-ord:first-child{border-top:0}
+.grp-ord .tx{min-width:0}.grp-ord .tx b{display:block}.grp-ord .tx small{color:var(--muted);font-size:12.5px}
+@media (max-width:360px){.livopt{grid-template-columns:1fr}}
 .chip .c{font-variant-numeric:tabular-nums;opacity:.65}
 .chip .sw{width:8px;height:8px;border-radius:50%}
 
@@ -621,13 +640,19 @@ function seed(){
   T('o1043',[[29,'Récupéré à la boutique par Modou'],[28,'Livré par Modou · payé en espèces']]);
   function R(id,lines,nom,tel,quartier,statut,minAgo,expMin,oid,mode){return {id:id,lignes:lines.map(function(x){return {pid:x[0],qte:x[1],taille:x[2]||''};}),client:{nom:nom,tel:tel,quartier:quartier},statut:statut,date:now-minAgo*60e3,expire:now+expMin*60e3,orderId:oid||'',promu:false,mode:mode||'livraison'};}
   function A(id,oid,nom,note,texte,hAgo){return {id:id,orderId:oid,nom:nom,note:note,texte:texte,photo:'',date:now-hAgo*h,visible:true};}
+  (function(){var zR={j:[2,5]},zT={j:[3,6]};
+    [O(1052,1.2,'Ndèye Sarr','770002323','Rufisque, cité SIPRES','insta',[L('p4',1)],2000,'livraison',0,'nouvelle'),
+     O(1051,6,'Moustapha Diouf','760004747','Rufisque Est','tiktok',[L('p9',1,'Blanc')],2000,'wave',0,'prete'),
+     O(1050,9,'Awa Faye','780006161','Thiès, Médina Fall','fb',[L('p3',1)],3000,'livraison',0,'prete')].forEach(function(o,i){
+      o.src='vitrine';o.liv='groupee';o.zone=i<2?'Rufisque':'Thiès';o.depart=nextDepart(i<2?zR:zT);commandes.unshift(o);});})();
   [['o1045',14.6862,-17.4497],['o1047',14.7645,-17.4405],['o1046',14.7810,-17.3150]].forEach(function(g){var o=commandes.filter(function(x){return x.id===g[0];})[0];o.client.geo={lat:g[1],lng:g[2]};});
   return {v:10,avis:[
       A('a1','o1044','Ndèye Fatou Mbaye',5,'Mèches de très bonne qualité, livrées le jour même à Guédiawaye.',24),
       A('a2','o1043','Coumba Guèye',5,'Les abayas sont exactement comme dans la vidéo. Je recommande !',28),
       A('a3','o1041','Mariama Sow',4,'Baskets jolies et confortables. Elles taillent un peu petit.',70),
       A('a4','o1039','Fatou Diop',5,'Troisième commande, toujours sérieux et rapide. Merci !',118)
-    ],shop:{nom:'Awa Collection',tel:'770000000',wave:'770000000',om:'780000000',mixx:'',retrait:true,adresse:'Liberté 6, à côté de la pharmacie',zone:'Dakar et banlieue'},produits:produits,
+    ],shop:{nom:'Awa Collection',tel:'770000000',wave:'770000000',om:'780000000',mixx:'',retrait:true,adresse:'Liberté 6, à côté de la pharmacie',zone:'Dakar et banlieue',
+      zones:[{id:'zr',n:'Rufisque',ex:4000,gr:2000,j:[2,5]},{id:'zt',n:'Thiès',ex:6000,gr:3000,j:[3,6]}]},produits:produits,
     livreurs:[{id:'l1',nom:'Modou Faye',tel:'770001122',zone:'Médina, Plateau, Liberté',acces:true,code:'4821'},{id:'l2',nom:'Ibrahima Ba',tel:'760003344',zone:'Parcelles, Guédiawaye',acces:true,code:'7350'},{id:'l3',nom:'Pape Ndiaye',tel:'780005566',zone:'Pikine, Keur Massar',acces:false,code:''}],
     commandes:commandes,
     live:{actif:true,debut:now-25*60e3,items:['p6','p1','p3','p4','p7','p2'],current:'p6',acompte:2000,delai:30,resa:[
@@ -761,7 +786,8 @@ function homeHTML(){
   var todo=[];
   S.commandes.filter(waitPay).forEach(function(o){todo.push(['open-order',o.id,'warn','Vérifiez le paiement '+PM[o.payChoix]+' de '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+F(total(o))+' · regardez vos notifications '+PMS[o.payChoix]]);});
   nouv.forEach(function(o){todo.push(['open-order',o.id,'info','Confirmer la commande de '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+SRC[o.src]+' · '+F(total(o))]);});
-  conf.filter(function(o){return !o.livreurId&&o.mode!=='retrait';}).forEach(function(o){todo.push(['open-order',o.id,'sun','Choisir un livreur pour '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+(o.client.quartier||'adresse à préciser')]);});
+  grpGroups().filter(function(g){return dDiff(g.dep)<=1;}).forEach(function(g){todo.unshift(['gz-open',g.zone,'warn','Départ groupé '+(dDiff(g.dep)<0?'en retard':dLabel(g.dep))+' : '+g.zone,plural(g.list.length,'commande','commandes')+' · donnez-les à un livreur'+(g.list.length===1?' (partez même avec une seule)':'')]);});
+  conf.filter(function(o){return !o.livreurId&&o.mode!=='retrait'&&o.liv!=='groupee';}).forEach(function(o){todo.push(['open-order',o.id,'sun','Choisir un livreur pour '+(o.client.nom||fmtTel(o.client.tel)),'#'+o.num+' · '+(o.client.quartier||'adresse à préciser')]);});
   S.livreurs.forEach(function(l){var bl=riderBal(l.id),dc=declared(l.id);if(dc.length&&bl.net>0){todo.unshift(['tab','riders','warn',prenom(l)+' dit avoir envoyé '+F(bl.net)+' par '+(PM[dc[0].remise.via]||'espèces'),'Vérifiez et confirmez la réception']);}else if(bl.net>0)todo.push(['tab','riders','warn',l.nom+' doit vous remettre '+F(bl.net),'Argent des colis déjà livrés'+(bl.B?', ses livraisons déjà déduites':'')]);else if(bl.net<0&&!shopDeclared(l.id).length)todo.push(['tab','riders','sun','Vous devez '+F(-bl.net)+' à '+prenom(l),'Ses livraisons payées par le client à la boutique']);});
   S.commandes.filter(function(o){return o.transfert;}).forEach(function(o){var a=rider(o.transfert.de),b2=rider(o.transfert.vers);todo.push(['open-order',o.id,'info',prenom(a)+' passe le colis #'+o.num+' à '+prenom(b2),'En attente que '+prenom(b2)+' accepte']);});
   var pend=S.live.resa.filter(function(r){return r.statut==='attente';}).length;if(pend)todo.unshift(['tab','live','sun',plural(pend,'réservation','réservations')+' du live à vérifier','Regardez qui a payé l\'acompte']);
@@ -783,6 +809,7 @@ function homeHTML(){
     '<div class="stat good"><span class="k">Bénéfice 7 jours</span><span class="v">'+F(ben)+'</span><span class="s">sur '+F(ventes)+' de ventes</span></div>'+
   '</div>'+
   '<div class="quick"><button class="btn" data-act="new-order">Nouvelle commande</button><button class="btn ghost" data-act="tab" data-id="live">Préparer un live</button></div>'+
+  grpHTML()+
   '<section class="blk"><h3>À faire maintenant</h3>'+(todo.length?'<div class="todo">'+todo.slice(0,7).map(function(t){return '<button data-act="'+t[0]+'" data-id="'+esc(t[1])+'"><span class="dot '+t[2]+'"></span><span class="tx"><b>'+esc(t[3])+'</b><small>'+esc(t[4])+'</small></span>'+chev+'</button>';}).join('')+'</div>':'<p class="empty">Tout est à jour.</p>')+'</section>'+
   (last.length?'<section class="blk"><h3>D\'où viennent vos commandes · 7 jours</h3><div class="card blk">'+
     '<p class="src-insight"><b>'+SRC[top]+'</b> vous apporte le plus de commandes : '+cnt[top]+' sur '+last.length+'.</p>'+
@@ -814,7 +841,7 @@ function ocard(o){
   '<span><span class="onum">#'+o.num+'</span>'+srcTag(o.src)+'<span class="when">'+when(o.date)+'</span><span class="pill st-'+s[1]+'">'+stLabel(o)+'</span></span>'+
   '<span class="oc-name">'+esc(o.client.nom||fmtTel(o.client.tel))+'<span class="q">· '+esc(o.client.quartier||'—')+'</span></span>'+
   '<span class="oc-items">'+esc(itemsTxt(o))+'</span>'+
-  '<span class="oc-l3"><b class="amt">'+F(total(o))+'</b><span class="pay">'+payShort(o)+'</span>'+(o.mode==='retrait'?'<span class="rider-tag">Retrait</span>':r?'<span class="rider-tag">'+esc(r.nom.split(' ')[0])+'</span>':'')+'</span></button>';
+  '<span class="oc-l3"><b class="amt">'+F(total(o))+'</b><span class="pay">'+payShort(o)+'</span>'+(o.mode==='retrait'?'<span class="rider-tag">Retrait</span>':r?'<span class="rider-tag">'+esc(r.nom.split(' ')[0])+'</span>':'')+(o.liv==='groupee'&&!r&&['nouvelle','prete'].indexOf(o.statut)>=0?'<span class="rider-tag grp">🕐 '+esc(o.zone||'Groupée')+' · '+esc(dLabel(o.depart))+'</span>':'')+'</span></button>';
 }
 
 /* Live : les clients réservent eux-mêmes, acompte Wave, annulation automatique */
@@ -958,7 +985,7 @@ function showOrder(id,keep){
   '<div class="tags"><span class="pill st-'+s[1]+'">'+stLabel(o)+'</span>'+srcTag(o.src)+'</div>'+
   '<div class="card blk">'+
     (tel?'<div class="kv"><span>Téléphone</span><b class="sel">'+fmtTel(tel)+'</b></div>':'')+
-    (o.mode==='retrait'?'<div class="kv"><span>Réception</span><b>Retrait sur place</b></div>':'<div class="kv"><span>Adresse</span><b>'+esc(o.client.quartier||'—')+'</b></div>'+(routeLink(o.client)?'<div class="kv"><span>Localisation</span><a class="geo-a" href="'+routeLink(o.client)+'" target="_blank" rel="noopener">'+PIN+' Voir l\'itinéraire</a></div>':''))+
+    (o.mode==='retrait'?'<div class="kv"><span>Réception</span><b>Retrait sur place</b></div>':'<div class="kv"><span>Adresse</span><b>'+esc(o.client.quartier||'—')+'</b></div>'+(o.liv?'<div class="kv"><span>Livraison</span><b>'+esc(livTag(o))+'</b></div>':'')+(routeLink(o.client)?'<div class="kv"><span>Localisation</span><a class="geo-a" href="'+routeLink(o.client)+'" target="_blank" rel="noopener">'+PIN+' Voir l\'itinéraire</a></div>':''))+
     (o.note?'<div class="kv"><span>Note</span><b>'+esc(o.note)+'</b></div>':'')+
     (tel?'<div class="btn-row"><a class="btn sm ghost" href="'+wa(tel,'')+'" target="_blank" rel="noopener">Écrire sur WhatsApp</a><button class="btn sm ghost" data-act="copy" data-text="'+fmtTel(tel)+'">Copier le numéro</button></div>':'')+
   '</div>'+
@@ -985,6 +1012,7 @@ function tpl(o,k){
     var pay=enc<=0&&o.pay==='acompte'?'Tout est payé'+(o.acompteVia?' par '+PM[o.acompteVia]:'')+' ✅':o.pay==='livraison'&&PM[o.payChoix]&&(normTel(S.shop[o.payChoix]).length>=9||payLink(o.payChoix))?'À payer par '+PM[o.payChoix]+' : '+F(enc)+(normTel(S.shop[o.payChoix]).length>=9?'\n• '+PM[o.payChoix]+' : '+fmtTel(S.shop[o.payChoix]):'')+(payLink(o.payChoix)?'\nPayer directement : '+payLink(o.payChoix):'')+'\nEnvoyez-nous la capture ici après le paiement.':o.pay==='livraison'?'À payer '+where+' : '+F(enc):o.pay==='acompte'?'Acompte reçu : '+F(o.acompte)+'\nReste à payer '+where+' : '+F(enc):'Articles déjà payés par '+(PM[o.pay]||'')+' ✅'+(o.frais?'\nLivraison à régler au livreur : '+F(o.frais):'');
     return hi+' 👋\nVotre commande n°'+o.num+' chez '+shop+' est confirmée :\n'+lines+(rt?'':'\nLivraison : '+F(o.frais))+'\nTotal : '+F(total(o))+'\n'+pay+'\n\n'+(rt?'Retrait : '+(S.shop.adresse||'à la boutique'):'Adresse : '+(o.client.quartier||'à préciser'))+'\nMerci pour votre confiance 🙏';
   }
+  if(k==='attente')return hi+' 👋\nVotre commande n°'+o.num+' chez '+shop+' part bien en livraison groupée'+(o.zone?' pour '+o.zone:'')+', au plus tard '+dLabel(o.depart,true)+'.\nSi vous pouvez attendre un ou deux jours de plus, dites-le-nous : ça nous aide à grouper les livraisons. Sinon, pas de souci, on part comme prévu 🙏';
   if(k==='pret')return hi+', votre commande n°'+o.num+' est prête ✅\nVous pouvez passer la récupérer : '+(S.shop.adresse||'à la boutique')+'\n'+(enc>0?'À payer sur place : '+F(enc):'Tout est déjà payé ✅')+'\n'+shop;
   if(k==='route')return hi+', votre colis n°'+o.num+' est en route 🛵\nVotre livreur : '+r.nom+' ('+fmtTel(r.tel)+')\n'+(enc>0?'Montant à lui remettre : '+F(enc):'Rien à payer au livreur : tout est réglé ✅')+'\nMerci de rester joignable 🙏\n'+shop;
   if(k==='suivi')return hi+' 👋\nSuivez votre commande n°'+o.num+' chez '+shop+' ici :\nhttps://'+suiviLink(o)+'\nVous voyez quand elle est confirmée, en route et livrée.';
@@ -1111,7 +1139,7 @@ function riderSheet(keep){var l=rdraft.id?rider(rdraft.id):null;
   '<p class="hint">Seulement pour un livreur de confiance. Il voit ses colis (adresse, numéro du client, montant à encaisser) et marque lui-même « récupéré », « livré » ou « retour ». Il ne voit jamais vos prix d\'achat ni vos bénéfices.</p>'+
   (rdraft.acces?'<div class="kv"><span>Son code</span><b class="sel">'+esc(rdraft.code)+'</b></div><button class="linkbtn" data-act="r-newcode">Changer le code</button>':'')+'</div>'+
   '<button class="btn block" data-act="r-save">Enregistrer</button>'+(l?'<button class="linkbtn danger" data-act="r-del">Retirer ce livreur</button>':''),keep);}
-function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',waveLink:sp.waveLink||'',omLink:sp.omLink||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),zone:sp.zone||'',code:ACC&&ACC.code||'',livCode:sp.livCode||'',livZone:sp.livZone||''};
+function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,tel:sp.tel,wave:sp.wave||'',om:sp.om||'',mixx:sp.mixx||'',waveLink:sp.waveLink||'',omLink:sp.omLink||'',retrait:!!sp.retrait,adresse:sp.adresse||'',frais:String(fraisDef()),zone:sp.zone||'',code:ACC&&ACC.code||'',livCode:sp.livCode||'',livZone:sp.livZone||'',zones:(sp.zones||[]).map(function(z){return {id:z.id,n:z.n||'',ex:z.ex!=null?String(z.ex):'',gr:z.gr!=null?String(z.gr):'',j:(z.j||[]).slice()};})};
   openSheet('<div class="sh-head"><div><p class="eyebrow">Réglages</p><h2>Ma boutique</h2></div>'+closeBtn+'</div>'+
   '<label class="fld"><span>Nom de la boutique</span><input id="s_nom" data-s="nom" value="'+esc(sdraft.nom)+'"></label>'+
   '<div class="card blk"><b>Photo de profil et couverture <em>(facultatif)</em></b><p class="hint">Elles s\'affichent en haut de votre boutique en ligne, comme sur TikTok. Sans photo, la page reste simple.</p>'+
@@ -1131,7 +1159,7 @@ function openShop(keepD){var sp=S.shop;if(!(keepD&&sdraft))sdraft={nom:sp.nom,te
   '<label class="fld"><span>Adresse et horaires du retrait</span><input id="s_adr" data-s="adresse" value="'+esc(sdraft.adresse)+'" placeholder="Ex. : Liberté 6, à côté de la pharmacie, 10h–20h"></label></div>'+
   '<label class="fld"><span>Zone de livraison</span><input id="s_zone" data-s="zone" maxlength="60" value="'+esc(sdraft.zone)+'" placeholder="Ex. : Touba et environs, Louga ville, tout le Sénégal"><small class="hint">Vos clients la voient sur votre boutique en ligne. Vide = « Livraison à domicile ».</small></label>'+
   '<label class="fld"><span>Prix de la livraison habituel</span><input id="s_frais" data-s="frais" inputmode="numeric" value="'+esc(sdraft.frais)+'"><small class="hint">Utilisé pour les commandes de la boutique en ligne et du live. 0 = livraison gratuite.</small></label>'+
-  tlCard()+
+  zonesCard()+tlCard()+
   '<button class="btn block" data-act="s-save">Enregistrer</button>'+
   (MODE==='owner'?ownerCards():'<div class="card blk"><b>Démo</b><p class="hint">Tout ce que vous changez reste seulement sur ce téléphone. Vous pouvez revenir aux exemples du début.</p><button class="btn ghost" data-act="s-reset">Recommencer la démo</button>'+(onSite()?'<button class="btn" data-act="go-welcome">Créer ma vraie boutique</button>':'')+'</div>'),keepD);}
 function openClients(){
@@ -1147,13 +1175,14 @@ function openClients(){
 /* Panier gardé sur le téléphone du client (boutique en ligne et live séparés) */
 function cartKey(ctx){return 'teranga-shop-panier-'+(MODE==='public'?PUBCODE+'-':'')+ctx;}
 function loadCart(ctx){try{var r=localStorage.getItem(cartKey(ctx));return r?JSON.parse(r):null;}catch(e){return null;}}
-function saveCart(){if(!cart)return;cart.back=0;try{localStorage.setItem(cartKey(cart.ctx),JSON.stringify({lines:cart.lines.concat(cart.away||[]),nom:cart.nom,tel:cart.tel,quartier:cart.quartier,mode:cart.mode,pay:cart.pay||'',t:Date.now()}));}catch(e){}}
+function saveCart(){if(!cart)return;cart.back=0;try{localStorage.setItem(cartKey(cart.ctx),JSON.stringify({lines:cart.lines.concat(cart.away||[]),nom:cart.nom,tel:cart.tel,quartier:cart.quartier,mode:cart.mode,pay:cart.pay||'',zone:cart.zone||'',liv:cart.liv||'',t:Date.now()}));}catch(e){}}
 function newCart(ctx){
   var c={ctx:ctx,step:'list',lines:[],away:[],back:0,nom:'',tel:'',quartier:'',mode:'livraison',pay:'',pid:'',taille:'',rid:'',onum:0}, sv=loadCart(ctx);
   if(!sv)return c;
   ['nom','tel','quartier'].forEach(function(k){c[k]=String(sv[k]||'');});
   if(sv.mode==='retrait'&&S.shop.retrait)c.mode='retrait';
   if(sv.pay&&payOk(sv.pay))c.pay=sv.pay;
+  if(sv.zone&&zoneBy(sv.zone)){c.zone=sv.zone;c.liv=sv.liv==='groupee'?'groupee':'express';}
   var used={};
   (sv.lines||[]).forEach(function(l){var p=prod(l.pid);if(!p||!(l.qte>0))return;
     var max=ctx==='lv'?(S.live.items.indexOf(p.id)>=0?avail(p.id):0):(p.visible?(p.stock>0?p.stock:10):0), q=Math.min(l.qte,max-(used[p.id]||0));
@@ -1189,11 +1218,11 @@ function openClient(keep){
     return;
   }
   if(cart.step==='cart'||cart.step==='wait'){
-    var wait=cart.step==='wait', wp=wait?prod(cart.pid):null, wts=sizes(wp), tot=cartTot(), frais=(!lv&&cart.mode!=='retrait')?fraisDef():0;
+    var wait=cart.step==='wait', wp=wait?prod(cart.pid):null, wts=sizes(wp), tot=cartTot(), frais=(!lv&&cart.mode!=='retrait')?cartFrais():0;
     var top=wait?'<div class="r-top"><span class="lnum lg">'+lnum(wp.id)+'</span><span class="tx"><b>'+esc(wp.nom)+'</b><small>'+F(wp.vente)+' · plus disponible pour le moment</small></span></div><p class="hint">Si une réservation est annulée, l\'article passe à vous et la boutique vous écrit sur WhatsApp.</p>'+
       (wts.length?'<label class="fld"><span>'+esc(optNom(wp))+'</span><select data-ch="cw-taille"><option value="">Choisir</option>'+wts.map(function(t){return '<option'+(t===cart.taille?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select></label>':''):
       (cart.lines.length?'<div class="blk">'+cart.lines.map(function(l){var p=prod(l.pid);return '<div class="cline"><span class="t"><b>'+(lv?'N°'+lnum(l.pid)+' · ':'')+esc(p?p.nom:'')+'</b><small>'+(l.taille?esc(optNom(p))+' '+esc(l.taille)+' · ':'')+F(p?p.vente:0)+(l.qte>1?' × '+l.qte+' = '+F((p?p.vente:0)*l.qte):'')+'</small></span>'+qtyCtl(l.pid,l.taille,l.qte)+'</div>';}).join('')+'</div>'+
-      '<div class="sum"><div class="kv"><span>Articles</span><b>'+F(tot)+'</b></div>'+(lv?'<div class="kv hl"><span>Acompte pour confirmer</span><b>'+F(L.acompte<0?tot:Math.min(tot,L.acompte))+'</b></div>':'<div class="kv"><span>Livraison</span><b>'+(cart.mode==='retrait'?'Retrait gratuit':F(frais))+'</b></div><div class="kv total"><span>Total</span><b>'+F(tot+frais)+'</b></div>')+'</div>'+
+      '<div class="sum"><div class="kv"><span>Articles</span><b>'+F(tot)+'</b></div>'+(lv?'<div class="kv hl"><span>Acompte pour confirmer</span><b>'+F(L.acompte<0?tot:Math.min(tot,L.acompte))+'</b></div>':'<div class="kv"><span>'+(cartLiv()==='groupee'?'Livraison groupée':cartLiv()==='express'?'Livraison express':'Livraison')+'</span><b>'+(cart.mode==='retrait'?'Retrait gratuit':F(frais))+'</b></div><div class="kv total"><span>Total</span><b>'+F(tot+frais)+'</b></div>')+'</div>'+
       '<p class="hint">'+(lv?'Votre panier reste sur ce téléphone, mais rien n\'est réservé avant de toucher « Réserver ».':'Votre panier reste gardé sur ce téléphone : vous pouvez fermer la page et revenir plus tard.')+'</p>':'<p class="empty">Votre panier est vide.</p>');
     openSheet(shHead(ey+' · '+sh,wait?'Liste d\'attente':'Votre panier')+top+
       '<div class="grid2"><label class="fld"><span>Votre nom</span><input data-c="nom" value="'+esc(cart.nom)+'" autocomplete="name"></label><label class="fld"><span>Numéro WhatsApp</span><input data-c="tel" inputmode="tel" value="'+esc(cart.tel)+'" autocomplete="tel"></label></div>'+
@@ -1201,7 +1230,7 @@ function openClient(keep){
       (cart.mode==='retrait'?'':'<label class="fld"><span>Quartier</span><input data-c="quartier" list="quartiersC" value="'+esc(cart.quartier)+'"></label><datalist id="quartiersC">'+quartiers().map(function(x){return '<option value="'+esc(x)+'">';}).join('')+'</datalist>'+
         '<div class="fld"><span>Localisation <em>(facultatif)</em></span>'+(cart.geo?'<div class="geo-ok">'+PIN+' Position partagée'+(cart.geo.demo?' (exemple)':'')+'<button class="linkbtn danger" data-act="c-geo-del">Retirer</button></div>':'<button class="btn sm ghost" data-act="c-geo">'+PIN+' Partager ma position</button>')+
         (cart.geo?'':'<input data-c="maps" value="'+esc(cart.maps||'')+'" placeholder="ou collez un lien Google Maps" aria-label="Lien Google Maps">')+
-        '<small class="hint">Le livreur trouve votre porte plus vite. Seuls la boutique et son livreur la voient, jusqu\'à la livraison.</small></div>')+
+        '<small class="hint">Le livreur trouve votre porte plus vite. Seuls la boutique et son livreur la voient, jusqu\'à la livraison.</small></div>'+(!wait?zoneUI():''))+
       (!lv?payChips():'')+
       '<button class="btn block" data-act="'+(wait?'c-sendwait':'c-send')+'"'+(!wait&&!cart.lines.length?' disabled':'')+'>'+(wait?'M\'inscrire sur la liste d\'attente':lv?'Réserver':'Envoyer ma commande')+'</button>'+
       '<button class="linkbtn" data-act="c-back">← '+(wait?'Retour aux articles':'Ajouter d\'autres articles')+'</button>',keep);
@@ -1209,7 +1238,7 @@ function openClient(keep){
   }
   if(cart.step==='done'){
     var body;
-    if(!lv)body='<div class="big-ok">Merci ! Votre commande n°'+cart.onum+' est envoyée.</div>'+(PM[cart.opay]?payNow(cart.opay,cart.otot,cart.onum)+'<p class="hint">'+sh+' vérifie votre paiement et vous confirme sur WhatsApp. Vous pouvez suivre votre commande à tout moment.</p><button class="btn block ghost" data-act="c-suivi">Suivre ma commande</button>':'<p class="hint">'+sh+' vous confirme sur WhatsApp. Vous pouvez suivre votre commande à tout moment.</p><button class="btn block" data-act="c-suivi">Suivre ma commande</button>')+(MODE==='demo'?'<p class="vt-note">Démo : la commande est arrivée dans l\'onglet Commandes.</p><button class="btn block ghost" data-act="c-orders">Voir dans Commandes</button>':'');
+    if(!lv)body='<div class="big-ok">Merci ! Votre commande n°'+cart.onum+' est envoyée.</div>'+(cart.oliv==='groupee'?grpNote({liv:'groupee',zone:cart.ozone,depart:cart.odep,statut:'nouvelle',mode:'livraison'}):'')+(PM[cart.opay]?payNow(cart.opay,cart.otot,cart.onum)+'<p class="hint">'+sh+' vérifie votre paiement et vous confirme sur WhatsApp. Vous pouvez suivre votre commande à tout moment.</p><button class="btn block ghost" data-act="c-suivi">Suivre ma commande</button>':'<p class="hint">'+sh+' vous confirme sur WhatsApp. Vous pouvez suivre votre commande à tout moment.</p><button class="btn block" data-act="c-suivi">Suivre ma commande</button>')+(MODE==='demo'?'<p class="vt-note">Démo : la commande est arrivée dans l\'onglet Commandes.</p><button class="btn block ghost" data-act="c-orders">Voir dans Commandes</button>':'');
     else{
       var r=resaById(cart.rid);
       if(!r)body='<p class="hint">Réservation introuvable.</p>';
@@ -1330,7 +1359,7 @@ function openSuivi(oid,fromOrder){
       if(s[0]==='prete'&&rt&&i===cur)extra='<small>Adresse : '+esc(S.shop.adresse||'à la boutique')+'</small>';
       return '<li class="'+cls+'"><span class="tl-dot" aria-hidden="true"></span><span><b>'+s[1]+'</b>'+(h[s[0]]&&i<=cur?'<small>'+when(h[s[0]])+'</small>':'')+extra+'</span></li>';}).join('')+'</ol>';
   var due=aEncaisser(o);
-  openSheet(shHead('Vue client · '+esc(S.shop.nom||''),'Commande n°'+o.num)+tl+
+  openSheet(shHead('Vue client · '+esc(S.shop.nom||''),'Commande n°'+o.num)+tl+grpNote(o)+
     '<div class="sum">'+o.lignes.map(function(l){return '<div class="kv"><span>'+l.qte+' × '+esc(l.nom)+(l.taille?' · '+esc(l.taille):'')+'</span><b>'+F(l.prix*l.qte)+'</b></div>';}).join('')+
     (rt?'':'<div class="kv"><span>Livraison</span><b>'+(o.frais?F(o.frais):'Gratuite')+'</b></div>')+'<div class="kv total"><span>Total</span><b>'+F(total(o))+'</b></div>'+
     (st==='livree'||st==='retour'?'':due<=0?'<div class="kv"><span>Paiement</span><b>Tout payé ✓'+(o.acompteVia?' · '+PM[o.acompteVia]:'')+'</b></div>':'<div class="kv hl"><span>'+(waitPay(o)?'À payer par '+PM[o.payChoix]:rt?'À payer sur place':'À payer à la livraison')+'</span><b>'+F(due)+'</b></div>')+'</div>'+
@@ -1420,6 +1449,56 @@ function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(e){}}
 function shopCode(){return MODE==='demo'?slug():(PUBCODE||(ACC&&ACC.code)||slug());}
 function fraisDef(){return S.shop&&S.shop.frais!=null&&S.shop.frais!==''?+S.shop.frais:1500;}
+/* ---------- Livraison groupée : zones lointaines (Express tout de suite, ou Groupée moins chère avec une date au plus tard) ---------- */
+var JOURS=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],JOURSL=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],MOISC=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+function zonesL(){return (S&&S.shop&&Array.isArray(S.shop.zones)?S.shop.zones:[]).filter(function(z){return z&&z.id&&z.n;});}
+function zoneBy(id){return id?zonesL().filter(function(z){return z.id===id;})[0]||null:null;}
+function grOk(z){return !!z&&Array.isArray(z.j)&&z.j.length>0;}
+/* Au Sénégal l'heure est celle de Greenwich : la date du jour = la date UTC */
+function dkToday(){var d=new Date();return Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate());}
+function nextDepart(z){if(!grOk(z))return '';var t=dkToday();for(var i=1;i<=7;i++){var d=new Date(t+i*864e5);if(z.j.indexOf(d.getUTCDay())>=0)return d.toISOString().slice(0,10);}return '';}
+function dDiff(s){return s?Math.round((Date.parse(s+'T00:00:00Z')-dkToday())/864e5):99;}
+function dLabel(s,long){if(!s)return '';var df=dDiff(s),d=new Date(s+'T12:00:00Z');if(df===0)return "aujourd'hui";if(df===1)return 'demain';if(df<0)return 'en retard ('+JOURS[d.getUTCDay()]+' '+d.getUTCDate()+')';
+  return (long?JOURSL:JOURS)[d.getUTCDay()]+' '+d.getUTCDate()+' '+MOISC[d.getUTCMonth()];}
+function joursTxt(j){var a=(j||[]).slice().sort(function(a,b){return ((a+6)%7)-((b+6)%7);}).map(function(x){return 'le '+JOURSL[x];});return a.length>1?a.slice(0,-1).join(', ')+' et '+a[a.length-1]:(a[0]||'');}
+function cartZone(){return cart&&cart.ctx!=='lv'&&cart.mode!=='retrait'?zoneBy(cart.zone):null;}
+function cartLiv(){var z=cartZone();return z?(grOk(z)&&cart.liv==='groupee'?'groupee':'express'):'';}
+function cartFrais(){if(!cart||cart.mode==='retrait')return 0;var z=cartZone();if(z)return cartLiv()==='groupee'?num(z.gr):num(z.ex);return fraisDef();}
+function zoneUI(){var zs=zonesL();if(!zs.length||!cart||cart.ctx==='lv'||cart.mode==='retrait')return '';var z=cartZone();
+  var h='<label class="fld"><span>Votre zone</span><select data-ch="c-zone"><option value="">'+esc(S.shop.zone||'Près de la boutique')+' · '+(fraisDef()?F(fraisDef()):'livraison gratuite')+'</option>'+
+    zs.map(function(x){return '<option value="'+esc(x.id)+'"'+(z&&z.id===x.id?' selected':'')+'>'+esc(x.n)+' · '+(grOk(x)?'dès '+F(Math.min(num(x.ex),num(x.gr))):F(num(x.ex)))+'</option>';}).join('')+
+    '</select><small class="hint">Vous êtes loin de la boutique ? Choisissez votre zone.</small></label>';
+  if(z&&grOk(z)){var dep=nextDepart(z),eco=num(z.ex)-num(z.gr),g=cartLiv()==='groupee';
+    h+='<div class="fld"><span>Quand voulez-vous être livré ?</span><div class="livopt">'+
+      '<button type="button" class="lo" data-act="c-liv" data-v="express" aria-pressed="'+(!g)+'"><span class="lo-t">🚀 Express</span><span class="lo-p">'+F(num(z.ex))+'</span><small>Le livreur part dès que votre commande est prête.</small></button>'+
+      '<button type="button" class="lo" data-act="c-liv" data-v="groupee" aria-pressed="'+g+'"><span class="lo-t">🕐 Groupée</span><span class="lo-p">'+F(num(z.gr))+'</span><small>Livrée au plus tard <b>'+esc(dLabel(dep,true))+'</b></small>'+(eco>0?'<small class="lo-eco">Vous économisez '+F(eco)+'</small>':'')+'</button></div>'+
+      '<small class="hint">Groupée : la boutique envoie le livreur une seule fois pour toutes les commandes de '+esc(z.n)+'. Elle peut partir plus tôt, jamais plus tard.</small></div>';}
+  return h;}
+function grpNote(o){if(!o||o.liv!=='groupee'||o.mode==='retrait'||['nouvelle','prete'].indexOf(o.statut)<0)return '';
+  return '<p class="grp-note">🕐 <b>Livraison groupée'+(o.zone?' · '+esc(o.zone):'')+'</b><small>Le livreur part au plus tard <b>'+esc(dLabel(o.depart,true))+'</b>, avec les autres commandes de la zone.</small></p>';}
+function livTag(o){return o.liv==='groupee'?'🕐 Groupée'+(o.zone?' · '+o.zone:'')+(o.depart&&['nouvelle','prete'].indexOf(o.statut)>=0?' · départ au plus tard '+dLabel(o.depart):''):o.liv==='express'?'🚀 Express'+(o.zone?' · '+o.zone:''):'';}
+/* Commandes groupées pas encore parties, rangées par zone */
+function grpGroups(){var g={};S.commandes.filter(function(o){return o.liv==='groupee'&&o.mode!=='retrait'&&(o.statut==='nouvelle'||o.statut==='prete');}).forEach(function(o){var k=o.zone||'Zone';
+    (g[k]=g[k]||{zone:k,list:[],dep:''}).list.push(o);if(o.depart&&(!g[k].dep||o.depart<g[k].dep))g[k].dep=o.depart;});
+  return Object.keys(g).map(function(k){return g[k];}).sort(function(a,b){return (a.dep||'9')<(b.dep||'9')?-1:1;});}
+function grpHTML(){var gs=grpGroups();if(!gs.length)return '';
+  return '<section class="blk"><h3>Livraisons groupées</h3><div class="todo">'+gs.map(function(g){var df=dDiff(g.dep),urg=df<=1;
+    return '<button data-act="gz-open" data-id="'+esc(g.zone)+'"><span class="dot '+(urg?'warn':'info')+'"></span><span class="tx"><b>'+esc(g.zone)+' · '+plural(g.list.length,'commande','commandes')+'</b><small>Départ au plus tard '+esc(dLabel(g.dep,true))+(urg&&g.list.length===1?' · une seule commande, partez quand même':'')+'</small></span>'+chev+'</button>';}).join('')+'</div></section>';}
+function openGroup(zone){var g=grpGroups().filter(function(x){return x.zone===zone;})[0];if(!g){closeSheet();toast('Plus de commande groupée pour '+zone);return;}
+  var opts=S.livreurs.map(function(l){return '<option value="'+l.id+'">'+esc(l.nom)+' · '+esc(l.zone)+'</option>';}).join('');
+  openSheet('<div class="sh-head"><div><p class="eyebrow">Livraison groupée · départ au plus tard '+esc(dLabel(g.dep,true))+'</p><h2>'+esc(zone)+' · '+plural(g.list.length,'commande','commandes')+'</h2></div>'+closeBtn+'</div>'+
+    '<div class="card blk">'+g.list.sort(byDate).map(function(o){return '<div class="grp-ord"><button class="linkbtn tx" data-act="open-order" data-id="'+o.id+'"><b>#'+o.num+' · '+esc(o.client.nom||fmtTel(o.client.tel))+'</b><small>'+esc(o.client.quartier||'adresse à préciser')+' · '+F(total(o))+' · '+(o.statut==='nouvelle'?'à confirmer':'confirmée')+'</small></button>'+
+      '<a class="btn sm ghost" href="'+wa(o.client.tel,tpl(o,'attente'))+'" target="_blank" rel="noopener" title="Demander au client s\'il peut attendre">WhatsApp</a></div>';}).join('')+'</div>'+
+    (g.list.length===1?'<p class="hint">Une seule commande pour '+esc(zone)+'. Vous avez promis au client : au plus tard '+esc(dLabel(g.dep,true))+'. Si personne d\'autre ne commande, partez quand même : un client content revient. Vous pouvez aussi lui demander sur WhatsApp s\'il peut attendre un peu.</p>':'')+
+    (S.livreurs.length?'<label class="fld"><span>Livreur pour toute la tournée</span><select id="gz_rider"><option value="">— Choisir un livreur —</option>'+opts+'</select></label>'+
+      '<button class="btn block" data-act="gz-send" data-id="'+esc(zone)+'">Confirmer et donner les '+g.list.length+' colis au livreur</button>':'<p class="hint">Ajoutez d\'abord un livreur dans l\'onglet Livreurs.</p>'));}
+function zonesCard(){var zs=sdraft.zones||[];
+  return '<div class="card blk"><b>Zones lointaines <em>(facultatif)</em></b><p class="hint">Pour les clients loin de vous. Ils choisissent <b>🚀 Express</b> (le livreur part tout de suite) ou <b>🕐 Groupée</b> : moins cher, livrée au plus tard le prochain jour de départ, avec les autres commandes de la zone.</p>'+
+    zs.map(function(z,i){return '<div class="zrow"><div class="zhead"><label class="fld"><span>Zone</span><input data-z="n" data-i="'+i+'" maxlength="30" value="'+esc(z.n)+'" placeholder="Ex. : Rufisque, Thiès"></label><button class="linkbtn danger" data-act="z-del" data-i="'+i+'">Retirer</button></div>'+
+      '<div class="grid2"><label class="fld"><span>🚀 Prix Express</span><input data-z="ex" data-i="'+i+'" inputmode="numeric" value="'+esc(z.ex)+'" placeholder="Ex. : 5000"></label><label class="fld"><span>🕐 Prix Groupée</span><input data-z="gr" data-i="'+i+'" inputmode="numeric" value="'+esc(z.gr)+'" placeholder="Ex. : 2000"></label></div>'+
+      '<div class="fld"><span>Jours de départ groupé</span><div class="chips days">'+[1,2,3,4,5,6,0].map(function(d){return '<button class="chip" data-act="z-day" data-i="'+i+'" data-v="'+d+'" aria-pressed="'+((z.j||[]).indexOf(d)>=0)+'">'+JOURS[d]+'</button>';}).join('')+'</div>'+
+      '<small class="hint">'+((z.j||[]).length?'Le livreur part au plus tard '+joursTxt(z.j)+'.':'Sans jour choisi : seulement Express pour cette zone.')+'</small></div></div>';}).join('')+
+    (zs.length<12?'<button class="btn sm ghost" data-act="z-add">+ Ajouter une zone lointaine</button>':'')+'</div>';}
 function dn(t){return '<p class="vt-note">'+t+'</p>';}
 function errMsg(e){var m=String(e&&(e.message||e.error_description||e.msg)||e||'');
   if(/fetch|network|Load failed|NetworkError|timed? ?out/i.test(m))return 'Pas de connexion internet : réessayez';
@@ -1788,8 +1867,9 @@ function pubSend(a,b){
       S.live.resa.push({id:r.id,tk:r.tk,lignes:lines,client:cl,statut:r.statut,date:Date.now(),expire:r.expire?(+r.expire-((r.now||Date.now())-Date.now())):0,promu:false,mode:cart.mode,pos:isW?1:0});
       cart.rid=r.id;if(!isW)cart.lines=[];saveCart();cart.step='done';openClient();if(isW)resaEtat(r.id).then(function(){if(cart&&cart.step==='done')openClient(true);});})
     .catch(function(e){done();toast(errMsg(e));});
-  else{var pc=PM[cart.pay]&&payOk(cart.pay)?cart.pay:'', ot=cartTot()+(rt?0:fraisDef());
-    rpc('shop_commander',{p_code:PUBCODE,p:{client:cl,lignes:lines,mode:cart.mode,payChoix:pc}}).then(function(r){
+  else{var pc=PM[cart.pay]&&payOk(cart.pay)?cart.pay:'', ot=cartTot()+(rt?0:cartFrais()), cz=cartZone(), cl2=cartLiv();
+    rpc('shop_commander',{p_code:PUBCODE,p:{client:cl,lignes:lines,mode:cart.mode,payChoix:pc,zone:cz?cz.id:'',liv:cl2}}).then(function(r){
+      cart.oliv=r.liv||(cz?cl2:'');cart.ozone=r.zone||(cz?cz.n:'');cart.odep=r.depart||(cl2==='groupee'?nextDepart(cz):'');
       cart.onum=r.num;cart.oid=r.id;cart.otk=r.tk;saveMyCmd(r.id,r.tk,r.num);cart.opay=r.payChoix===undefined?pc:r.payChoix;cart.otot=r.total||ot;cart.lines=[];saveCart();cart.step='done';openClient();pubLoad();})
     .catch(function(e){done();toast(errMsg(e));});}
 }
@@ -2117,7 +2197,10 @@ document.addEventListener('click',function(e){
         var n2=Date.now(), nr={id:'r'+n2,lignes:isW?[{pid:cart.pid,qte:1,taille:cart.taille}]:cart.lines.map(function(l){return {pid:l.pid,qte:l.qte,taille:l.taille};}),client:cl,statut:isW?'liste':'attente',date:n2,expire:isW?0:n2+S.live.delai*60e3,orderId:'',promu:false,mode:cart.mode};
         S.live.resa.push(nr);cart.rid=nr.id;if(!isW)cart.lines=[];saveCart();cart.step='done';save();render();openClient();toast(isW?'Ajoutée à la liste d\'attente':'Réservation reçue dans l\'onglet Live');
       }else{
-        o=createOrder({client:cl,src:'vitrine',lignes:cart.lines.map(function(l){return lineFrom(prod(l.pid),l.qte,l.taille);}),frais:fraisDef(),pay:'livraison',acompte:0,note:'',mode:cart.mode,payChoix:PM[cart.pay]?cart.pay:''});
+        var dz=cartZone(),dl=cartLiv();
+        o=createOrder({client:cl,src:'vitrine',lignes:cart.lines.map(function(l){return lineFrom(prod(l.pid),l.qte,l.taille);}),frais:cartFrais(),pay:'livraison',acompte:0,note:'',mode:cart.mode,payChoix:PM[cart.pay]?cart.pay:''});
+        if(dz&&!rt1){o.zone=dz.n;o.liv=dl;if(dl==='groupee')o.depart=nextDepart(dz);}
+        cart.oliv=o.liv||'';cart.ozone=o.zone||'';cart.odep=o.depart||'';
         cart.onum=o.num;cart.oid=o.id;cart.opay=o.payChoix||'';cart.otot=total(o);cart.lines=[];saveCart();cart.step='done';save();render();openClient();toast('Commande #'+o.num+' reçue dans vos Commandes');
       }
       break;}
@@ -2216,11 +2299,26 @@ document.addEventListener('click',function(e){
       var badL=['waveLink','omLink'].filter(function(k){var u=String(sdraft[k]||'').trim();return u&&!/^https:\/\/\S+$/.test(u);});if(badL.length){toast('Le lien '+(badL[0]==='waveLink'?'Wave':'Orange Money')+' doit commencer par https://');break;}
       var bad=['wave','om','mixx'].filter(function(k){var d=normTel(sdraft[k]);return d&&d.length!==9;});
       if(bad.length){toast('Numéro '+PM[bad[0]]+' incomplet : 9 chiffres');break;}
+      var zsv=(sdraft.zones||[]).filter(function(z){return String(z.n||'').trim();}),zbad=zsv.filter(function(z){return String(z.ex).trim()===''||((z.j||[]).length&&String(z.gr).trim()==='');})[0];
+      if(zbad){toast('Zone '+zbad.n.trim()+' : mettez '+(String(zbad.ex).trim()===''?'le prix Express':'le prix Groupée'));break;}
+      S.shop.zones=zsv.slice(0,12).map(function(z){return {id:z.id||('z'+Date.now().toString(36)+rnd(2)),n:String(z.n).trim().slice(0,30),ex:num(z.ex),gr:num(z.gr),j:(z.j||[]).filter(function(d,i,a){return d>=0&&d<=6&&a.indexOf(d)===i;})};});
       S.shop.nom=(sdraft.nom||'').trim()||'Ma boutique';S.shop.tel=normTel(sdraft.tel);
       S.shop.wave=normTel(sdraft.wave);S.shop.om=normTel(sdraft.om);S.shop.mixx=normTel(sdraft.mixx);S.shop.waveLink=String(sdraft.waveLink||'').trim().slice(0,400);S.shop.omLink=String(sdraft.omLink||'').trim().slice(0,400);
       S.shop.retrait=sdraft.retrait;S.shop.adresse=(sdraft.adresse||'').trim();S.shop.frais=num(sdraft.frais);S.shop.zone=(sdraft.zone||'').trim().slice(0,60);
       tlSaveCode(sdraft.livCode,sdraft.livZone);
       save();closeSheet();render();toast(methods().length?'Enregistré · paiement : '+methodsTxt():'Enregistré · aucun numéro de paiement');break;}
+    case 'z-add':sdraft.zones=sdraft.zones||[];sdraft.zones.push({id:'z'+Date.now().toString(36)+rnd(2),n:'',ex:'',gr:'',j:[]});openShop(true);break;
+    case 'z-del':sdraft.zones.splice(+b.dataset.i,1);openShop(true);break;
+    case 'z-day':{var zd=sdraft.zones[+b.dataset.i];if(!zd)break;var dv=+b.dataset.v,ix=zd.j.indexOf(dv);if(ix>=0)zd.j.splice(ix,1);else zd.j.push(dv);openShop(true);break;}
+    case 'c-liv':cart.liv=b.dataset.v==='groupee'?'groupee':'express';saveCart();openClient(true);break;
+    case 'gz-open':openGroup(id);break;
+    case 'gz-send':{var gsel=$('#gz_rider'),gl=gsel&&gsel.value?rider(gsel.value):null;if(!gl){toast('Choisissez le livreur');break;}
+      var gg=grpGroups().filter(function(x){return x.zone===id;})[0];if(!gg)break;
+      gg.list.forEach(function(x){if(x.statut==='nouvelle')setSt(x,'prete');x.livreurId=gl.id;x.transfert=null;addTrace(x,'Tournée groupée '+id+' : colis confié à '+prenom(gl));});
+      save();render();closeSheet();
+      if(gl.acces)toast(prenom(gl)+' voit les '+gg.list.length+' colis dans son espace livreur');
+      else{window.open(wa(gl.tel,'🛵 Tournée '+id+' · '+plural(gg.list.length,'colis','colis')+' · '+(S.shop.nom||'')+'\n\n'+gg.list.map(function(x,n){return (n+1)+'. '+tpl(x,'livreur');}).join('\n\n')),'_blank');toast('Tournée '+id+' donnée à '+prenom(gl));}
+      break;}
     case 's-reset':if(!armed(b,'Oui, revenir aux exemples'))break;S=seed();q='';filt='all';save();closeSheet();go('home');toast('Démo recommencée');break;
   }
 });
@@ -2244,6 +2342,7 @@ document.addEventListener('input',function(e){
   if(draft&&t.dataset.k==='prix'){draft.lignes[+t.dataset.ln].prix=num(t.value);updSum();return;}
   if(pdraft&&(k=t.dataset.p)){pdraft[k]=['achat','vente','stock'].indexOf(k)>=0?num(t.value):t.value;if(k==='achat'||k==='vente')updMarge();return;}
   if(rdraft&&(k=t.dataset.r)){rdraft[k]=t.value;return;}
+  if(sdraft&&(k=t.dataset.z)){var zi=sdraft.zones&&sdraft.zones[+t.dataset.i];if(zi)zi[k]=k==='n'?t.value:t.value.replace(/\D/g,'');return;}
   if(sdraft&&(k=t.dataset.s)){sdraft[k]=t.value;return;}
 });
 document.addEventListener('change',function(e){
@@ -2257,6 +2356,7 @@ document.addEventListener('change',function(e){
   else if(c==='d-taille'&&draft){draft.lignes[+t.dataset.ln].taille=t.value;}
   else if(c==='p-vis'&&pdraft){pdraft.visible=t.checked;}
   else if(c==='cw-taille'&&cart){cart.taille=t.value;}
+  else if(c==='c-zone'&&cart){cart.zone=t.value;var zc=zoneBy(t.value);cart.liv=zc&&grOk(zc)&&cart.liv==='groupee'?'groupee':'express';saveCart();openClient(true);}
   else if(c==='r-acces'&&rdraft){rdraft.acces=t.checked;if(t.checked&&!rdraft.code)rdraft.code=newCode();riderSheet(true);}
   else if(c==='s-retrait'&&sdraft){sdraft.retrait=t.checked;}
   else if(c==='ob-retrait'&&ONB){ONB.retrait=t.checked;openOnb(2);}
@@ -2265,6 +2365,16 @@ document.addEventListener('change',function(e){
 document.addEventListener('keydown',function(e){if(e.key!=='Escape')return;if($('#lb')&&!$('#lb').hidden){closeZoom();return;}if(!$('#sheetWrap').hidden)closeSheet();});
 document.addEventListener('click',function(e){var im=e.target.closest&&e.target.closest('[data-act="zoom-tap"]');if(im){e.stopPropagation();zoomTap(im,e);}},true);
 
+/* Démo : les boutons Appeler / WhatsApp vers les numéros d'exemple n'ouvrent rien (le contact Seck Apps marche toujours) */
+(function(){
+  function on(){return MODE==='demo';}
+  function nb(h){h=String(h||'');var m=h.match(/^(?:tel|sms):\s*([+\d\s.-]+)/i)||h.match(/wa\.me\/\+?(\d+)/i)||h.match(/[?&]phone=\+?(\d+)/i);return m?m[1].replace(/\D/g,''):null;}
+  function bad(h){var n=nb(h);return !!n&&!/^(221)?778790006$/.test(n);}
+  function msg(h){toast('Exemple : dans la vraie app, ce bouton '+(/^(tel|sms):/i.test(String(h))?'appelle le numéro.':'ouvre WhatsApp.'));}
+  document.addEventListener('click',function(e){if(!on())return;var a=e.target&&e.target.closest&&e.target.closest('a[href]');if(a&&bad(a.getAttribute('href'))){e.preventDefault();e.stopImmediatePropagation();msg(a.getAttribute('href'));}},true);
+  var ac=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=function(){if(on()&&bad(this.getAttribute('href'))){msg(this.getAttribute('href'));return;}return ac.apply(this,arguments);};
+  var wo=window.open;window.open=function(u){if(on()&&bad(u)){msg(u);return null;}return wo.apply(window,arguments);};
+})();
 boot();
 })();
 </script>
