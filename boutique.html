@@ -278,6 +278,11 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .resa.off{opacity:.62}
 .badge-live{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--p-live)}
 .badge-live i{width:9px;height:9px;border-radius:50%;background:var(--p-live);animation:blink 1.2s infinite}
+.live-banner{display:flex;align-items:center;gap:12px;width:100%;border:0;border-radius:16px;padding:13px 16px;background:#E5252A;color:#fff;text-align:left;cursor:pointer;font:inherit;box-shadow:0 6px 18px rgba(229,37,42,.28)}
+.live-banner .dot{width:12px;height:12px;border-radius:50%;background:#fff;flex:none;box-shadow:0 0 0 4px rgba(255,255,255,.35);animation:blink 1.2s infinite}
+.live-banner b{display:block;font-size:16px;letter-spacing:.02em}
+.live-banner small{display:block;font-size:13.5px;font-weight:600;opacity:.95}
+.live-banner .go{margin-left:auto;font-size:22px;font-weight:800}
 .lc-card{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px;min-width:0}
 .lc-card .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .lc-card .szs{margin-top:6px}
@@ -883,7 +888,9 @@ function liveHTML(){
   (L.actif?'<p class="live-on">En direct depuis '+hm(L.debut)+'</p>':'')+
   '<p class="lead">Vous ne notez plus les commentaires. Les clients réservent eux-mêmes avec le lien, puis paient l\'acompte'+(methods().length?' par '+methodsTxt():'')+'. Sans paiement, la réservation s\'annule toute seule.</p>'+
   (R.length?'<div class="live-stats"><span><b>'+R.length+'</b> réservations</span><span><b>'+pay.length+'</b> payées</span><span><b>'+off.length+'</b> pas sérieuses</span></div>':'')+
-  '<section class="shoplink"><div><h2>Lien de réservation du live</h2><p>Mettez-le dans votre bio et dites pendant le live : « Pour réserver, cliquez sur le lien dans ma bio. Les commentaires ne comptent pas. »</p></div>'+
+  '<section class="shoplink"><div><h2>Un seul lien dans votre bio</h2><p>Mettez le lien de votre boutique dans votre bio. Pendant le live, vos clients voient « 🔴 En direct » en haut de la boutique et réservent les articles du live. Dites : « Pour réserver, cliquez sur le lien dans ma bio. Les commentaires ne comptent pas. »</p></div>'+
+  '<div class="linkbox"><code>'+esc(vitrineLink())+'</code><button data-act="copy" data-text="https://'+esc(vitrineLink())+'">Copier</button></div>'+
+  '<p>Lien direct au live, pour WhatsApp ou un commentaire :</p>'+
   '<div class="linkbox"><code>'+esc(liveLink())+'</code><button data-act="copy" data-text="https://'+esc(liveLink())+'">Copier</button></div>'+
   '<button class="btn on-accent" data-act="live-client">Voir comme un client</button></section>'+
   '<div class="card blk"><div class="fld"><span>Acompte pour confirmer</span><div class="chips">'+ACOMPTES.map(function(v){return '<button class="chip" data-act="lv-aco" data-v="'+v+'" aria-pressed="'+(L.acompte===v)+'">'+(v<0?'Tout':F(v))+'</button>';}).join('')+'</div></div>'+
@@ -1252,8 +1259,9 @@ function openClient(keep){
   }
   if(!lv){
     var vis=S.produits.filter(function(p){return p.visible;}), av=avisVis(), avg=avgNote(av);
-    var hr=hero('Commandez en ligne');
+    var hr=hero('Commandez en ligne'),lvOn=S.live&&S.live.actif&&(S.live.items||[]).some(function(id){return prod(id);});
     openSheet((hr&&solo()?'':shHead('Vue client','Boutique en ligne'))+hr+
+    (lvOn?'<button class="live-banner" data-act="c-to-lv"><span class="dot"></span><span><b>EN DIRECT SUR TIKTOK</b><small>Touchez ici pour voir les articles du live et réserver</small></span><span class="go">›</span></button>':'')+
     '<div class="vt-head'+(hr?' slim':'')+'">'+(hr?'':'<span class="mark'+(imgOk(S.shop.logo)?' has-logo':'')+'" aria-hidden="true">'+markHTML()+'</span>')+'<div>'+(hr?'':'<b>'+sh+'</b>')+(av.length?'<span class="avg">'+stars(avg)+' <b>'+avg.toFixed(1).replace('.',',')+'</b> · '+plural(av.length,'avis client','avis clients')+'</span>':'')+'<small>'+(S.shop.zone?'Livraison : '+esc(S.shop.zone):'Livraison à domicile')+(S.shop.retrait?' ou retrait sur place':'')+(methods().length?' · '+methodsTxt()+' ou à la réception':'')+'</small></div></div>'+
     '<p class="hint">Ajoutez autant d\'articles que vous voulez, puis ouvrez le panier.</p>'+backNote()+myCmdBlock()+
     '<div class="vt-grid">'+vis.map(function(p){var pa=avisFor(p.id);return '<div class="vt-card">'+picBtn(p)+'<div class="in"><b>'+esc(p.nom)+'</b><span class="pr">'+F(p.vente)+'</span>'+(pa.length?'<span class="mini-rate">'+stars(avgNote(pa))+' ('+pa.length+')</span>':'')+(p.stock>0?'<span class="av-ok">Disponible</span>':'<span class="av-pre">Précommande · arrivage '+esc(p.arrivage||'bientôt')+'</span>')+addCtl(p)+(p.stock>0?'':'<button class="linkbtn" data-act="c-alert" data-id="'+p.id+'">Prévenez-moi à l\'arrivage</button>')+'</div></div>';}).join('')+'</div>'+
@@ -1266,6 +1274,7 @@ function openClient(keep){
   var hrl=hero('',true);
   openSheet((hrl&&solo()?'':shHead('Vue client',sh))+hrl+
   '<p class="badge-live">'+(L.actif?'<i></i>En direct':'Pas de live en ce moment')+'</p>'+
+  (MODE!=='owner'?'<button class="linkbtn" data-act="c-go-vt">Voir toute la boutique →</button>':'')+
   '<p class="hint">Les commentaires ne comptent pas : réservez ici. Ajoutez tous les articles que vous voulez, puis ouvrez le panier. Pour confirmer, payez l\'acompte de '+acoTxt()+(methods().length?' par '+methodsTxt():'')+' dans les '+(L.delai<60?L.delai+' minutes':'60 minutes')+'.</p>'+backNote()+myResaBlock()+
   (cart.away.length?'<div class="saved-note"><span>'+(function(n){return plural(n,'article','articles')+' de votre panier '+(n>1?'ne sont':'n\'est')+' plus dans ce live.';})(cart.away.reduce(function(a,l){return a+l.qte;},0))+'</span><button class="linkbtn" data-act="c-to-vt">Les retrouver dans la boutique en ligne →</button></div>':'')+
   (cur?card(cur,true):'')+
@@ -1817,7 +1826,10 @@ function pubRefresh(){if(document.visibilityState==='hidden'||!cart||MODE!=='pub
         pend.forEach(function(x){var n=resaById(x.id);if(!n||n.statut===before[x.id])return;
           if(n.statut==='payee')toast('Réservation confirmée : '+rTxt(n));
           else if(n.statut==='attente'&&before[x.id]==='liste')toast('C\'est votre tour : payez l\'acompte pour garder '+rTxt(n));});});}
-  else if(cart.step==='done'&&cart.ctx==='lv'&&cart.rid)resaEtat(cart.rid).then(function(){if(cart&&cart.step==='done')openClient(true);});}
+  else if(cart.step==='done'&&cart.ctx==='lv'&&cart.rid)resaEtat(cart.rid).then(function(){if(cart&&cart.step==='done')openClient(true);});
+  else if(cart.step==='list'&&cart.ctx==='vt'&&!((VTN=(VTN||0)+1)%3)){var was=!!(S.live&&S.live.actif);
+    rpc('shop_public',{p_code:PUBCODE}).then(function(r){if(!r||!r.ok)return;applyPub(r);if(cart&&cart.ctx==='vt'&&cart.step==='list'&&!!S.live.actif!==was)openClient(true);}).catch(function(){});}}
+var VTN=0;
 function resaKey(){return 'teranga-shop-resas-'+PUBCODE;}
 function myResas(){try{return JSON.parse(lsGet(resaKey())||'[]');}catch(e){return [];}}
 function saveMyResa(id,tk){var l=myResas().filter(function(y){return y.id!==id;});l.unshift({id:id,tk:tk,date:Date.now()});lsSet(resaKey(),JSON.stringify(l.slice(0,10)));}
@@ -2149,7 +2161,7 @@ document.addEventListener('click',function(e){
     case 'd-pay':draft.pay=b.dataset.v;renderDraft(true);if(draft.pay==='acompte'){var ac=$('#d_ac');if(ac)ac.focus();}break;
     case 'd-save':saveDraft();break;
 
-    case 'live-toggle':S.live.actif=!S.live.actif;if(S.live.actif)S.live.debut=Date.now();save();render();toast(S.live.actif?'Live démarré : partagez le lien de réservation':'Live terminé');break;
+    case 'live-toggle':S.live.actif=!S.live.actif;if(S.live.actif)S.live.debut=Date.now();save();render();toast(S.live.actif?'Live démarré : votre boutique montre « En direct »':'Live terminé : la boutique redevient normale');break;
     case 'lv-cur':S.live.current=S.live.current===id?'':id;save();render();break;
     case 'lv-aco':S.live.acompte=+b.dataset.v;save();render();break;
     case 'lv-delai':S.live.delai=+b.dataset.v;save();render();break;
@@ -2175,6 +2187,8 @@ document.addEventListener('click',function(e){
     case 's-img-del':S.shop[b.dataset.v]='';save();openShop(true);toast(b.dataset.v==='cover'?'Couverture retirée':'Photo retirée');break;
     case 'o-paid':o=byId(id);if(!o||!PM[o.payChoix])break;o.pay='acompte';o.acompte=total(o);o.acompteVia=o.payChoix;save();render();showOrder(id,true);toast('Paiement '+PM[o.acompteVia]+' noté : tout est payé');break;
     case 'o-paylater':o=byId(id);if(!o)break;o.payChoix='';save();render();showOrder(id,true);toast(o.mode==='retrait'?'Le client paiera sur place':'Le client paiera à la livraison');break;
+    case 'c-to-lv':saveCart();cart=newCart('lv');openClient();try{window.scrollTo(0,0);}catch(e){}break;
+    case 'c-go-vt':saveCart();cart=newCart('vt');openClient();try{window.scrollTo(0,0);}catch(e){}break;
     case 'c-to-vt':{var vs=loadCart('vt')||{lines:[]};vs.lines=(vs.lines||[]).concat(cart.away);try{localStorage.setItem(cartKey('vt'),JSON.stringify(Object.assign(vs,{nom:vs.nom||cart.nom,tel:vs.tel||cart.tel,quartier:vs.quartier||cart.quartier})));}catch(e){}
       cart.away=[];saveCart();cart=newCart('vt');openClient();toast('Vos articles sont dans le panier de la boutique');break;}
     case 'c-geo':b.disabled=true;b.textContent='Recherche de votre position…';getGeo(function(g){if(!cart)return;if(g.demo&&MODE!=='demo'){toast('Position introuvable : autorisez la localisation, ou collez un lien Google Maps');openClient(true);return;}cart.geo=g;openClient(true);toast(g.demo?'Démo : position d\'exemple. Sur le vrai site, c\'est la vraie position du client.':'Position partagée');});break;
