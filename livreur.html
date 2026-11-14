@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fr">
 <head><script>/* terangaapps.com : passe en https dès que le certificat est prêt */(function(){try{var l=location;if(l.protocol==="http:"&&/(^|\.)terangaapps\.com$/.test(l.hostname)){var u="https://"+l.host+l.pathname+l.search+l.hash;fetch("https://"+l.host+"/CNAME",{mode:"no-cors",cache:"no-store"}).then(function(){l.replace(u)}).catch(function(){})}}catch(e){}})();</script>
-<meta charset="utf-8">
+<meta charset="utf-8"><script>/* Essai gratuit : 1 mois pour toute inscription jusqu'au 31/01/2027 (offre de lancement), puis 14 jours. Même règle sur le serveur (Supabase seck_essai_fin). */window.ESSAI_LANCEMENT=Date.now()<Date.UTC(2027,1,1);window.ESSAI_TXT=ESSAI_LANCEMENT?'1 mois gratuit':'14 jours gratuits';window.ESSAI_TXT_LONG=ESSAI_LANCEMENT?"1 mois d'essai gratuit":"14 jours d'essai gratuit";window.ESSAI_IT=ESSAI_LANCEMENT?'1 mese gratis':'14 giorni gratis';window.ESSAI_JOURS=ESSAI_LANCEMENT?30:14;</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Espace livreur · Teranga Shop</title>
 <meta name="description" content="Vos colis à livrer, le client au bon moment et l'argent à remettre à la boutique.">
@@ -1559,7 +1559,7 @@ function startWelcome(){setMode('welcome');$('#shopName').textContent='Bienvenue
   '<ul class="w-list"><li><span class="n">1</span><span><b>Une boutique en ligne avec panier</b>Un lien dans votre bio : le client choisit, commande, et la commande arrive chez vous.</span></li>'+
   '<li><span class="n">2</span><span><b>Des lives sans « je prends » qui disparaissent</b>Les clients réservent avec le lien et paient l\'acompte. Sans paiement, la réservation s\'annule toute seule.</span></li>'+
   '<li><span class="n">3</span><span><b>Vos livreurs et votre argent</b>Chaque livreur a son code. Vous savez qui doit combien, et votre bénéfice.</span></li></ul>'+
-  '<button class="btn block" data-act="w-new">Créer ma boutique · 7 jours gratuits</button>'+
+  '<button class="btn block" data-act="w-new">Créer ma boutique · '+ESSAI_TXT+'</button>'+
   '<button class="btn block ghost" data-act="w-login">J\'ai déjà un compte</button>'+
   '<button class="btn block soft" data-act="w-demo">Voir la démo avec des exemples</button>'+
   '<p class="hint center">Seck Apps · WhatsApp 77 879 00 06</p></div>';}
@@ -1572,7 +1572,7 @@ function renderAuth(msg){var su=AUTH.su;window.scrollTo(0,0);
   (msg?'<p class="bad-t">'+esc(msg)+'</p>':'')+
   '<button class="btn block" data-act="au-go">'+(su?'Créer ma boutique':'Entrer')+'</button>'+
   '<button class="linkbtn" data-act="au-switch">'+(su?'J\'ai déjà un compte : me connecter':'Pas encore de compte ? Créer ma boutique')+'</button>'+
-  (su?'<p class="hint">7 jours gratuits, sans rien payer. Ensuite 5 000 F par mois par Wave ou Orange Money.</p>':
+  (su?'<p class="hint">'+ESSAI_TXT+', sans rien payer. Ensuite 5 000 F par mois par Wave ou Orange Money.</p>':
     '<p class="hint">Mot de passe oublié ? <a href="'+wa(SUPPORT,'Bonjour Seck Apps, j\'ai oublié mon mot de passe Teranga Shop. Mon numéro : ')+'" target="_blank" rel="noopener">Écrivez à Seck Apps sur WhatsApp</a>.</p>')+
   '<button class="linkbtn" data-act="w-back">← Retour</button></div>';}
 function authGo(btn){
