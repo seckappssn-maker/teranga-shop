@@ -7,8 +7,8 @@
 <meta name="description" content="Vos colis à livrer, le client au bon moment et l'argent à remettre à la boutique.">
 <meta property="og:title" content="Espace livreur">
 <meta property="og:description" content="Vos colis à livrer, le client au bon moment et l'argent à remettre à la boutique.">
-<meta property="og:url" content="https://seckappssn-maker.github.io/teranga-shop/livreur.html">
-<meta property="og:image" content="https://seckappssn-maker.github.io/teranga-shop/copertina-livreur.png">
+<meta property="og:url" content="https://shop.terangaapps.com/livreur.html">
+<meta property="og:image" content="https://shop.terangaapps.com/copertina-livreur.png">
 <meta name="theme-color" content="#183A78">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="icon-192.png">
@@ -1448,13 +1448,13 @@ var ILL=(function(){
 var MODE='demo', SB=null, USER=null, ACC=null, PUBCODE='', SKEW=0, PULLT=null, PUSHT=null, PUBT=null, ACCT=null;
 var PULLN=0, LAST='', SNAP={}, STOCKQ={}, ALERTS={}, NETOK=true, LOADED=false, ONB=null, LIVC='', STORY='', AUTH={su:true,nom:'',tel:'',pw:'',pw2:''};
 var SUPA_URL='https://ncsjgmkrsvtwklfrdbgy.supabase.co', SUPA_KEY='sb_publishable_oDE4BbU6J3RTnce1Oo91cQ_hokWgh0U', MAIL_DOM='@terangashop.app';
-var SITE='seckappssn-maker.github.io/teranga-shop/', SUPPORT='778790006';
+var SITE='shop.terangaapps.com/', SUPPORT='778790006';
 var PUSH_PUB='BLcHXOxXIRWkIBKizjrAQ0pRpNURUxUGiIlzYgHCGH-aAKLeiGsoL_thiuzOrPAUaF6lWhgOtBFTajqAcmO6sB8';
 var BAG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 12.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>';
 
 function setMode(m){MODE=m;document.body.setAttribute('data-mode',m);}
 function solo(){return MODE==='public'||MODE==='livreur'||MODE==='welcome'||MODE==='boot'||MODE==='blocked';}
-function onSite(){return /github\.io$/.test(location.hostname)||/[?&]online\b/.test(location.search);}
+function onSite(){return /(github\.io|terangaapps\.com)$/.test(location.hostname)||/[?&]online\b/.test(location.search);}
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(e){}}
 function shopCode(){return MODE==='demo'?slug():(PUBCODE||(ACC&&ACC.code)||slug());}
@@ -2061,7 +2061,7 @@ function ownerCards(){return '<div class="card blk"><b>Adresse de votre boutique
 
 
 /* ---------- Teranga Livraison : envoyer la commande à une société de livraison à moto ---------- */
-var TL_SITE='https://seckappssn-maker.github.io/teranga-livraison/', TLS={};
+var TL_SITE='https://livraison.terangaapps.com/', TLS={};
 var TLST={nouvelle:['En attente d\'un livreur','info'],prise:['Le livreur va chercher le colis','sun'],recuperee:['Colis récupéré, en route','warn'],livree:['Livré ✅','ok'],annulee:['Annulée par la société','bad']};
 function tlCodeOf(v){v=String(v||'').trim();var m=v.match(/[?&]c=([^&#\s]+)/);if(m)v=decodeURIComponent(m[1]);return v.toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,40);}
 function tlCard(){var sp=S.shop,zs=sp.livZones||[];
